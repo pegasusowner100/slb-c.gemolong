@@ -1,6 +1,7 @@
 FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PORT=8080
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -34,5 +35,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type d -exec chmod 755 {} \; \
     && find /var/www/html -type f -exec chmod 644 {} \;
 
-EXPOSE 80
-CMD ["apache2ctl", "-D", "FOREGROUND"]
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 8080
+CMD ["/docker-entrypoint.sh"]
