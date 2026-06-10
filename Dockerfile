@@ -5,6 +5,8 @@ RUN apt-get update \
     && docker-php-ext-configure gd --with-jpeg \
     && docker-php-ext-install gd zip curl \
     && a2enmod rewrite \
+    && a2dismod mpm_event \
+    && a2dismod mpm_worker \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
