@@ -31,7 +31,19 @@ Website resmi SLB-C YPSLB Gemolong dengan fitur lengkap untuk manajemen informas
 - Akun Cloudinary
 - Browser modern
 
-## 🔧 Setup Lokal
+## � Deploy ke Railway
+
+Untuk deploy di Railway, gunakan `railway` CLI atau GitHub integration:
+
+1. Push repo ke GitHub.
+2. Buat project baru di Railway dan hubungkan repo `slb-c.gemolong`.
+3. Set environment variables sesuai `railway.env.example`.
+4. Pastikan `BASE_URL=/` untuk root deployment.
+5. Railway akan menjalankan container pada port yang disediakan oleh env `PORT`.
+
+Jika Anda menggunakan Railway, cukup gunakan `railway.env.example` sebagai panduan variabel.
+
+## �🔧 Setup Lokal
 
 ### 1. Clone Repository
 ```bash
