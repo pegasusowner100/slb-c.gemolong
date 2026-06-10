@@ -37,8 +37,8 @@ Untuk deploy di Railway, gunakan `railway` CLI atau GitHub integration:
 
 1. Push repo ke GitHub.
 2. Buat project baru di Railway dan hubungkan repo `slb-c.gemolong`.
-3. Set environment variables sesuai `railway.env.example`.
-4. Pastikan `BASE_URL=/` untuk root deployment.
+3. Set environment variables sesuai `railway.env.example`.   - Railway mungkin menyarankan nama `NEXT_PUBLIC_SUPABASE_URL` atau `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+   - Aplikasi ini juga mendukung alias tersebut secara otomatis.4. Pastikan `BASE_URL=/` untuk root deployment.
 5. Railway akan menjalankan container pada port yang disediakan oleh env `PORT`.
 
 Jika Anda menggunakan Railway, cukup gunakan `railway.env.example` sebagai panduan variabel.
