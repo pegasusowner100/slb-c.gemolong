@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAPAN PENGUMUMAN - SIPANDU</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        @keyframes pulse-soft {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        .animate-pulse-soft { animation: pulse-soft 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-50 overflow-hidden">
+    <div id="root"></div>
+
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- KONFIGURASI SUPABASE ---
+        const SUPABASE_URL = "https://yewkffbatvrbtfliikia.supabase.co"; 
+        const SUPABASE_ANON_KEY = "sb_publishable_gh_LzjznODmbTtMBzt5aaA_sFTDMykg";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- MOCK LUCIDE ICONS (SVG) ---
+        const Icon = ({ path, size = 24, className = '', viewBox = "0 0 24 24" }) => (
+            <svg className={className} width={size} height={size} fill="none" viewBox={viewBox} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {path}
+            </svg>
+        );
+
+        const FileText = (props) => <Icon {...props} path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></>} />;
+        const Search = (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>} />;
+        const Trash2 = (props) => <Icon {...props} path={<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>} />;
+        const Plus = (props) => <Icon {...props} path={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>} />;
+        const Loader2 = (props) => <Icon {...props} className={`${props.className} animate-spin`} path={<path d="M21 12a9 9 0 1 1-6.219-8.56"/>} />;
+        const Lock = (props) => <Icon {...props} path={<><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />;
+        const LogOut = (props) => <Icon {...props} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>} />;
+        const Download = (props) => <Icon {...props} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} />;
+        const X = (props) => <Icon {...props} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />;
+        const Eye = (props) => <Icon {...props} path={<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>} />;
+        const CheckCircle2 = (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></>} />;
+        const Info = (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>} />;
+        const AlertTriangle = (props) => <Icon {...props} path={<><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />;
+        const Sparkles = (props) => <Icon {...props} path={<><path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M3 5h4"/><path d="M19 17v4"/><path d="M17 19h4"/></>} />;
+        const FileUp = (props) => <Icon {...props} path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></>} />;
+        const Building2 = (props) => <Icon {...props} path={<><path d="M2 22h20"/><path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18"/><path d="M9 22v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></>} />;
+        const Pencil = (props) => <Icon {...props} path={<><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></>} />;
+        const Clock = (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />;
+
+        const PDFToPhoto = ({ url }) => {
+            const [pages, setPages] = useState([]);
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                if (!url) return;
+                const render = async () => {
+                    setLoading(true);
+                    try {
+                        const loadingTask = pdfjsLib.getDocument(url);
+                        const pdf = await loadingTask.promise;
+                        const pageImgs = [];
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const viewport = page.getViewport({ scale: 1.5 });
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            await page.render({ canvasContext: context, viewport }).promise;
+                            pageImgs.push(canvas.toDataURL());
+                        }
+                        setPages(pageImgs);
+                    } catch (e) {
+                        console.error("PDF Render Error:", e);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                render();
+            }, [url]);
+
+            if (loading) return (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="animate-spin text-emerald-500 mb-4" size={32} />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Menyiapkan Tampilan Dokumen...</p>
+                </div>
+            );
+
+            return (
+                <div className="flex flex-col items-center gap-6 w-full">
+                    {pages.map((img, i) => (
+                        <div key={i} className="w-full bg-white shadow-xl rounded-xl overflow-hidden border border-slate-200">
+                            <img src={img} alt={`Halaman ${i+1}`} className="w-full h-auto select-none" />
+                            <div className="bg-slate-50 px-4 py-2 text-[9px] font-bold text-slate-400 border-t flex justify-between uppercase tracking-widest italic">
+                                <span>Halaman {i + 1} dari {pages.length}</span>
+                                <span>Pratinjau Sistem</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        function App() {
+            const [user, setUser] = useState(true); // Default logged in for demo, or integrate with main app auth
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [data, setData] = useState([]);
+            const [sources, setSources] = useState(['Gubernur', 'Setda Prov Jateng', 'BKD Prov Jateng', 'Dinas Sosial Prov Jateng', 'PPS Raharjo']);
+            const [selected, setSelected] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [isEditMode, setIsEditMode] = useState(false);
+            const [editId, setEditId] = useState(null);
+            const [loginModal, setLoginModal] = useState(false);
+            const [pin, setPin] = useState('');
+            const [errorMsg, setErrorMsg] = useState('');
+            const [loading, setLoading] = useState(false);
+            
+            const [isAddingNewSource, setIsAddingNewSource] = useState(false);
+            const [newSourceInput, setNewSourceInput] = useState('');
+            
+            const initialForm = { 
+                no: '', 
+                judul: '', 
+                konten: '',
+                sumber: 'PPS Raharjo',
+                tgl: new Date().toISOString().split('T')[0], 
+                prioritas: 'Normal',
+                pdf: '', 
+                fileName: '' 
+            };
+            const [form, setForm] = useState(initialForm);
+
+            // Fetch data from Supabase
+            const fetchData = async () => {
+                setLoading(true);
+                const { data: pengumuman, error } = await supabaseClient
+                    .from('pengumuman')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) console.error('Error fetching data:', error);
+                else {
+                    setData(pengumuman || []);
+                    // Tampilkan otomatis pengumuman terakhir jika belum ada yang dipilih
+                    if (pengumuman && pengumuman.length > 0 && !selected) {
+                        setSelected(pengumuman[0]);
+                    }
+                }
+
+                const { data: sourcesData, error: sourcesError } = await supabaseClient
+                    .from('sumber_info')
+                    .select('nama');
+                
+                if (sourcesError) console.error('Error fetching sources:', sourcesError);
+                else if (sourcesData) setSources(sourcesData.map(s => s.nama));
+                
+                setLoading(false);
+            };
+
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            const openAddModal = () => {
+                setForm(initialForm);
+                setIsEditMode(false);
+                setIsModalOpen(true);
+            };
+
+            const openEditModal = (item) => {
+                setForm({
+                    no: item.no,
+                    judul: item.judul,
+                    konten: item.konten,
+                    sumber: item.sumber,
+                    tgl: item.tgl,
+                    prioritas: item.prioritas,
+                    pdf: item.pdf,
+                    fileName: item.file_name
+                });
+                setEditId(item.id);
+                setIsEditMode(true);
+                setIsModalOpen(true);
+            };
+
+            const save = async (e) => {
+                e.preventDefault();
+                if (!form.pdf) return setErrorMsg("Harap unggah file PDF!");
+                setLoading(true);
+                
+                try {
+                    let finalSource = form.sumber;
+                    if (isAddingNewSource && newSourceInput.trim()) {
+                        finalSource = newSourceInput.trim();
+                        await supabaseClient.from('sumber_info').upsert({ nama: finalSource });
+                    }
+
+                    const payload = {
+                        no: form.no,
+                        judul: form.judul,
+                        konten: form.konten,
+                        sumber: finalSource,
+                        tgl: form.tgl,
+                        prioritas: form.prioritas,
+                        pdf: form.pdf,
+                        file_name: form.fileName,
+                        updated_at: new Date().toISOString()
+                    };
+
+                    if (isEditMode && editId) {
+                        const { error } = await supabaseClient
+                            .from('pengumuman')
+                            .update(payload)
+                            .eq('id', editId);
+                        if (error) throw error;
+                    } else {
+                        const { error } = await supabaseClient
+                            .from('pengumuman')
+                            .insert([payload]);
+                        if (error) throw error;
+                    }
+
+                    setIsModalOpen(false);
+                    setForm(initialForm);
+                    // Jika bukan mode edit, reset selected agar fetchData otomatis memilih yang terbaru
+                    if (!isEditMode) setSelected(null);
+                    fetchData();
+                } catch (err) { 
+                    setErrorMsg('Gagal memproses data.');
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const deleteItem = async (id) => {
+                if (!confirm('Yakin ingin menghapus pengumuman ini?')) return;
+                setLoading(true);
+                try {
+                    const { error } = await supabaseClient
+                        .from('pengumuman')
+                        .delete()
+                        .eq('id', id);
+                    if (error) throw error;
+                    if (selected?.id === id) setSelected(null);
+                    fetchData();
+                } catch (err) {
+                    console.error('Delete error:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleFileUpload = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.type !== 'application/pdf') return alert('Hanya file PDF yang diizinkan!');
+                
+                setLoading(true);
+                try {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Math.random()}.${fileExt}`;
+                    const filePath = `pengumuman/${fileName}`;
+
+                    let { error: uploadError } = await supabaseClient.storage
+                        .from('pdf')
+                        .upload(filePath, file, {
+                            cacheControl: '3600',
+                            upsert: true
+                        });
+
+                    if (uploadError) {
+                        console.error("Supabase Upload Error Details:", uploadError);
+                        throw uploadError;
+                    }
+
+                    const { data: { publicUrl } } = supabaseClient.storage
+                        .from('pdf')
+                        .getPublicUrl(filePath);
+
+                    setForm({ ...form, pdf: publicUrl, fileName: file.name });
+                } catch (error) {
+                    alert('Error uploading file!');
+                    console.error(error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (pin === '888') { // Simple admin pin
+                    setIsAdmin(true);
+                    setLoginModal(false);
+                    setPin('');
+                    setErrorMsg('');
+                } else {
+                    setErrorMsg('PIN Salah!');
+                }
+            };
+
+            const filtered = data.filter(d => 
+                d.judul?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                d.no?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                d.sumber?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return (
+                <div className="h-screen w-full flex flex-col bg-slate-50 font-sans text-slate-900 overflow-hidden text-sm">
+                    {/* Navbar */}
+                    <nav className="h-16 flex-none bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 border-b-2 border-emerald-500 px-4 md:px-6 flex items-center justify-between shadow-lg shadow-emerald-600/30 z-30">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 backdrop-blur-sm p-2.5 rounded-2xl text-white border border-white/30 hover:bg-white/30 transition-all">
+                                <FileText size={22} />
+                            </div>
+                            <div>
+                                <h1 className="font-black text-sm md:text-base uppercase tracking-tighter text-white">📋 PENGUMUMAN</h1>
+                                <p className="text-[9px] font-bold text-emerald-100 uppercase tracking-widest leading-none">Informasi & Berita Terkini</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 md:gap-4">
+                            <div className="relative hidden sm:block">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-200" size={16} />
+                                <input
+                                    placeholder="Cari Judul/No/Sumber..."
+                                    className="bg-emerald-700/40 backdrop-blur-sm rounded-2xl pl-10 pr-4 py-2.5 text-xs w-32 md:w-56 focus:ring-2 focus:ring-white outline-none font-bold text-white placeholder:text-emerald-200 border border-emerald-400/30 hover:border-emerald-300/50 transition-all"
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            {isAdmin ? (
+                                <div className="flex items-center gap-2">
+                                    <button onClick={openAddModal} className="bg-white hover:bg-blue-50 text-emerald-600 px-3 md:px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-2 uppercase shadow-lg shadow-emerald-800/30 border border-white hover:shadow-xl transition-all">
+                                        <Plus size={18} /> <span className="hidden sm:inline">BUAT</span>
+                                    </button>
+                                    <button onClick={() => setIsAdmin(false)} className="p-2.5 bg-emerald-700/40 backdrop-blur-sm text-emerald-100 rounded-2xl hover:text-white hover:bg-red-500/50 transition-all border border-emerald-400/30 hover:border-red-400/50" title="Logout"><LogOut size={18} /></button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setLoginModal(true)} className="px-3 md:px-4 py-2.5 rounded-2xl text-[10px] font-bold uppercase text-emerald-100 bg-emerald-700/40 backdrop-blur-sm flex items-center gap-2 hover:text-white hover:bg-emerald-700/60 transition-all border border-emerald-400/30 hover:border-emerald-300/50">
+                                    <Lock size={14} /> <span className="hidden sm:inline">Admin</span>
+                                </button>
+                            )}
+                        </div>
+                    </nav>
+
+                    <div className="flex-1 flex overflow-hidden flex-col md:flex-row">
+                        {/* Sidebar */}
+                        <aside className="w-full md:w-80 flex-none bg-emerald-50/50 border-b md:border-r border-emerald-100 flex flex-col overflow-hidden h-1/2 md:h-full">
+                            <div className="p-4 border-b border-emerald-100 bg-emerald-100/50 flex justify-between items-center">
+                                <h3 className="text-[10px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
+                                    <Clock size={12} /> Daftar Pengumuman
+                                </h3>
+                                {loading && <Loader2 className="animate-spin text-emerald-600" size={12} />}
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                                {filtered.map((item, index) => {
+                                    const priorityColors = {
+                                        'Segera': { bg: 'from-red-500 to-red-600', text: 'text-red-100', badge: 'bg-red-100 text-red-700' },
+                                        'Sangat Penting': { bg: 'from-orange-500 to-orange-600', text: 'text-orange-100', badge: 'bg-orange-100 text-orange-700' },
+                                        'Penting': { bg: 'from-amber-500 to-amber-600', text: 'text-amber-100', badge: 'bg-amber-100 text-amber-700' },
+                                        'Normal': { bg: 'from-emerald-500 to-emerald-600', text: 'text-emerald-100', badge: 'bg-emerald-100 text-emerald-700' }
+                                    };
+                                    const colors = priorityColors[item.prioritas] || priorityColors['Normal'];
+                                    const isSelected = selected?.id === item.id;
+
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => setSelected(item)}
+                                            className={`p-4 rounded-2xl cursor-pointer transition-all border-2 relative overflow-hidden group ${isSelected ? `bg-gradient-to-br ${colors.bg} ${colors.text} border-transparent shadow-xl` : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-lg'}`}
+                                        >
+                                            {/* Background gradient effect on hover */}
+                                            <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${isSelected ? 'opacity-20' : ''}`} style={{background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'}}></div>
+
+                                            {item.id === data[0]?.id && (
+                                                <div className={`absolute top-2 right-2 px-2 py-1 text-[7px] font-black uppercase tracking-tighter rounded-full flex items-center gap-1 animate-pulse-soft ${isSelected ? 'bg-white/25 text-white' : 'bg-emerald-600 text-white'}`}>
+                                                    <Sparkles size={8} /> TERBARU
+                                                </div>
+                                            )}
+
+                                            <div className="relative z-10">
+                                                <div className="flex justify-between items-start mb-3 gap-2">
+                                                    <div className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-full whitespace-nowrap ${isSelected ? 'bg-white/30' : colors.badge}`}>
+                                                        {item.prioritas}
+                                                    </div>
+                                                    <div className={`text-[8px] font-bold whitespace-nowrap ${isSelected ? 'text-white/70' : 'text-slate-400'}`}>
+                                                        {new Date(item.tgl).toLocaleDateString('id-ID')}
+                                                    </div>
+                                                </div>
+                                                <h4 className={`font-black uppercase tracking-tight leading-tight mb-2 line-clamp-2 text-sm ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                                                    {item.judul}
+                                                </h4>
+                                                <div className="flex items-center gap-1">
+                                                    <Building2 size={10} className={isSelected ? 'text-white/60' : 'text-slate-400'} />
+                                                    <div className={`text-[8px] font-bold uppercase ${isSelected ? 'text-white/70' : 'text-slate-600'}`}>
+                                                        {item.sumber}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {filtered.length === 0 && (
+                                    <div className="p-8 text-center text-slate-400">
+                                        <Search size={32} className="mx-auto mb-2 opacity-20" />
+                                        <p className="text-[10px] font-black uppercase">Tidak ada pengumuman</p>
+                                    </div>
+                                )}
+                            </div>
+                        </aside>
+
+                        {/* Content Area */}
+                        <main className="flex-1 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 overflow-y-auto p-4 md:p-8">
+                            {selected ? (
+                                <div className="max-w-5xl mx-auto space-y-6">
+                                    <div className="bg-gradient-to-br from-white to-slate-50/50 p-6 md:p-8 rounded-[2.5rem] shadow-2xl shadow-slate-300/20 border-2 border-white hover:shadow-slate-300/40 transition-all duration-300">
+                                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8 pb-6 border-b-2 border-slate-100">
+                                            <div className="space-y-4 flex-1">
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-widest">{selected.no}</span>
+                                                    <span className="text-slate-200">•</span>
+                                                    <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-widest">{new Date(selected.tgl).toLocaleDateString('id-ID')}</span>
+                                                    <span className="text-slate-200">•</span>
+                                                    <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-full border border-emerald-100">
+                                                        <Building2 size={11} className="text-emerald-600" />
+                                                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-tight">{selected.sumber}</span>
+                                                    </div>
+                                                    <span className="text-slate-200">•</span>
+                                                    <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
+                                                        selected.prioritas === 'Segera' ? 'bg-red-100 text-red-700' :
+                                                        selected.prioritas === 'Sangat Penting' ? 'bg-orange-100 text-orange-700' :
+                                                        selected.prioritas === 'Penting' ? 'bg-amber-100 text-amber-700' :
+                                                        'bg-emerald-100 text-emerald-700'
+                                                    }`}>{selected.prioritas}</span>
+                                                </div>
+                                                <h2 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter leading-tight">
+                                                    {selected.judul}
+                                                </h2>
+                                            </div>
+                                            <div className="flex gap-2 w-full md:w-auto flex-wrap md:flex-col">
+                                                {isAdmin && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => openEditModal(selected)}
+                                                            className="flex-1 md:flex-none p-3 bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600 rounded-2xl hover:shadow-lg hover:shadow-amber-200/50 transition-all border border-amber-200 hover:border-amber-300"
+                                                            title="Edit"
+                                                        >
+                                                            <Pencil size={18} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteItem(selected.id)}
+                                                            className="flex-1 md:flex-none p-3 bg-gradient-to-br from-red-50 to-red-100 text-red-600 rounded-2xl hover:shadow-lg hover:shadow-red-200/50 transition-all border border-red-200 hover:border-red-300"
+                                                            title="Hapus"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                <a
+                                                    href={selected.pdf}
+                                                    target="_blank"
+                                                    className="flex-[2] md:flex-none bg-gradient-to-br from-slate-800 to-slate-900 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-slate-400/20 hover:shadow-2xl hover:shadow-slate-400/30 transition-all border border-slate-700 hover:border-slate-600"
+                                                >
+                                                    <Download size={14} /> Download PDF
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div className="prose prose-slate max-w-none mb-10 bg-gradient-to-br from-slate-50 to-blue-50/30 p-6 rounded-2xl border border-slate-100">
+                                            <p className="text-slate-700 font-bold leading-relaxed whitespace-pre-wrap text-base">{selected.konten}</p>
+                                        </div>
+
+                                        <div className="border-t-2 border-slate-100 pt-10">
+                                            <div className="mb-4">
+                                                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4">Dokumen PDF</h3>
+                                            </div>
+                                            <PDFToPhoto url={selected.pdf} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-slate-300">
+                                    <Eye size={64} className="opacity-20 mb-4" />
+                                    <p className="text-xs font-black uppercase tracking-[0.3em]">Pilih pengumuman untuk melihat detail</p>
+                                </div>
+                            )}
+                        </main>
+                    </div>
+
+                    {/* Modal Input (Add / Edit) */}
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+                            <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] border border-slate-200">
+                                <div className="p-6 border-b-2 border-slate-100 flex justify-between items-center bg-gradient-to-r from-white to-blue-50 sticky top-0 z-10">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`${isEditMode ? 'bg-gradient-to-br from-amber-500 to-amber-600' : 'bg-gradient-to-br from-emerald-500 to-emerald-600'} p-3 rounded-2xl text-white shadow-lg`}>
+                                            {isEditMode ? <Pencil size={20}/> : <Plus size={20}/>}
+                                        </div>
+                                        <h2 className="font-black uppercase text-xs tracking-widest text-slate-800">
+                                            {isEditMode ? '📝 Edit Dokumen' : '📄 Entri Pengumuman Baru'}
+                                        </h2>
+                                    </div>
+                                    <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X size={20}/></button>
+                                </div>
+
+                                <form onSubmit={save} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-black text-slate-600 uppercase">Nomor Dokumen</label>
+                                            <input required placeholder="NOMOR/PENG/2024" className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-xs font-bold uppercase focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 outline-none transition-all" value={form.no} onChange={e => setForm({...form, no: e.target.value.toUpperCase()})} />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-black text-slate-600 uppercase">Tanggal Terbit</label>
+                                            <input type="date" required className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-xs font-bold focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 outline-none transition-all" value={form.tgl} onChange={e => setForm({...form, tgl: e.target.value})} />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center gap-2">
+                                            <label className="text-[11px] font-black text-slate-600 uppercase">Sumber Informasi</label>
+                                            <button type="button" onClick={() => setIsAddingNewSource(!isAddingNewSource)} className="text-[10px] font-black text-emerald-600 uppercase hover:text-emerald-700 transition-colors">
+                                                {isAddingNewSource ? '✓ Pilih Dari Daftar' : '+ Tambah Sumber Baru'}
+                                            </button>
+                                        </div>
+                                        {!isAddingNewSource ? (
+                                            <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-xs font-bold uppercase outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 transition-all" value={form.sumber} onChange={e => setForm({...form, sumber: e.target.value})}>
+                                                {sources.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        ) : (
+                                            <div className="relative">
+                                                <input
+                                                    autoFocus
+                                                    placeholder="NAMA SUMBER BARU..."
+                                                    className="w-full bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 text-xs font-bold uppercase outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                                                    value={newSourceInput}
+                                                    onChange={e => setNewSourceInput(e.target.value.toUpperCase())}
+                                                />
+                                                <Building2 className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600" size={18} />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[11px] font-black text-slate-600 uppercase">Judul Pengumuman</label>
+                                        <input required placeholder="MASUKKAN JUDUL PENGUMUMAN..." className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-xs font-bold uppercase focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 outline-none transition-all" value={form.judul} onChange={e => setForm({...form, judul: e.target.value.toUpperCase()})} />
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[11px] font-black text-slate-600 uppercase">Ringkasan / Konten</label>
+                                        <textarea rows="4" required placeholder="Tuliskan isi pengumuman dengan detail yang jelas..." className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 resize-none transition-all" value={form.konten} onChange={e => setForm({...form, konten: e.target.value})} />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-black text-slate-600 uppercase">Prioritas</label>
+                                            <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-xs font-bold uppercase outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 transition-all" value={form.prioritas} onChange={e => setForm({...form, prioritas: e.target.value})}>
+                                                <option value="Normal">⭕ Normal</option>
+                                                <option value="Penting">🔶 Penting</option>
+                                                <option value="Sangat Penting">🔴 Sangat Penting</option>
+                                                <option value="Segera">🚨 Segera</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[11px] font-black text-slate-600 uppercase">File PDF</label>
+                                            <div className="relative">
+                                                <input type="file" accept=".pdf" className="hidden" id="pdf-upload" onChange={handleFileUpload} />
+                                                <label htmlFor="pdf-upload" className="w-full bg-gradient-to-br from-slate-50 to-blue-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 group">
+                                                    <FileUp className="text-slate-400 group-hover:text-emerald-500 mb-2 transition-colors" size={24} />
+                                                    <span className="text-[9px] font-black uppercase text-slate-500 group-hover:text-emerald-600 text-center transition-colors">
+                                                        {form.fileName ? `✓ ${form.fileName}` : 'Klik atau Drag PDF'}
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {errorMsg && (
+                                        <div className="bg-red-50 p-4 rounded-2xl border-2 border-red-200 flex items-center gap-3 text-red-600">
+                                            <AlertTriangle size={20} />
+                                            <p className="text-[10px] font-black uppercase">{errorMsg}</p>
+                                        </div>
+                                    )}
+
+                                    <div className="pt-4 flex gap-3 sticky bottom-0 bg-white">
+                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-4 rounded-2xl uppercase text-[11px] transition-all">Batal</button>
+                                        <button type="submit" disabled={loading} className={`flex-[2] ${isEditMode ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-emerald-500 to-emerald-600'} text-white font-black py-4 rounded-2xl uppercase text-[11px] shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-xl disabled:opacity-50`}>
+                                            {loading && <Loader2 className="animate-spin" size={16} />}
+                                            {isEditMode ? '💾 Update' : '📤 Terbitkan'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Login Modal */}
+                    {loginModal && (
+                        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+                            <div className="bg-gradient-to-br from-white to-slate-50 p-8 rounded-[2.5rem] shadow-2xl shadow-slate-400/40 text-center w-full max-w-sm space-y-6 border-2 border-slate-200">
+                                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-600 rounded-3xl flex items-center justify-center mb-4 shadow-lg">
+                                    <Lock size={28} />
+                                </div>
+                                <h2 className="font-black text-lg md:text-xl uppercase text-slate-800 tracking-tight">🔐 Admin Login</h2>
+                                <form onSubmit={handleLogin} className="space-y-5">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">PIN Keamanan</label>
+                                        <input
+                                            type="password"
+                                            autoFocus
+                                            autoComplete="new-password"
+                                            placeholder="••••••••"
+                                            className="w-full bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl text-center text-2xl font-black tracking-[0.5em] outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all"
+                                            value={pin}
+                                            onChange={e => setPin(e.target.value)}
+                                        />
+                                    </div>
+                                    {errorMsg && (
+                                        <div className="bg-red-50 border-2 border-red-200 p-3 rounded-2xl flex items-center gap-2 text-red-600">
+                                            <AlertTriangle size={18} />
+                                            <p className="text-[10px] font-black uppercase">{errorMsg}</p>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-3 pt-2">
+                                        <button type="button" onClick={() => {setLoginModal(false); setPin(''); setErrorMsg('');}} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-2xl text-[11px] uppercase transition-all">Batal</button>
+                                        <button type="submit" className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:shadow-lg text-white font-black rounded-2xl text-[11px] uppercase shadow-lg shadow-emerald-200 transition-all">Masuk</button>
+                                    </div>
+                                </form>
+                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">PIN: 888</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+    <script>
+        // Sinyal aktivitas ke induk untuk mencegah logout otomatis
+        ['mousedown', 'keypress', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, () => {
+                if (window.parent !== window) {
+                    window.parent.postMessage('resetSession', '*');
+                }
+            }, true);
+        });
+    </script>
+</body>
+</html>
