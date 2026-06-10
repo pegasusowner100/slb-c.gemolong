@@ -7,6 +7,10 @@ RUN apt-get update \
     && a2enmod rewrite \
     && a2dismod mpm_event \
     && a2dismod mpm_worker \
+    && rm -f /etc/apache2/mods-available/mpm_event.load \
+    && rm -f /etc/apache2/mods-available/mpm_worker.load \
+    && rm -f /etc/apache2/mods-available/mpm_event.conf \
+    && rm -f /etc/apache2/mods-available/mpm_worker.conf \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
