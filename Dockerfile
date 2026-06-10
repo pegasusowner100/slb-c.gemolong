@@ -1,9 +1,9 @@
 FROM php:8.2-apache
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpng-dev libjpeg-dev libzip-dev unzip git \
+    && apt-get install -y --no-install-recommends libpng-dev libjpeg-dev libzip-dev libcurl4-openssl-dev unzip git \
     && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql gd zip \
+    && docker-php-ext-install pdo pdo_mysql gd zip curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . /var/www/html/
