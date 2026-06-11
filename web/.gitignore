@@ -1,0 +1,90 @@
+# ==========================================
+# KEAMANAN - API Keys & Credentials (JANGAN UPLOAD)
+# ==========================================
+includes/config.php
+includes/cloudinary.php
+includes/session.php
+.env
+.env.local
+.env.*.local
+.env.backup
+
+# Local-only private copies
+TIDAK DIUPLOAD/
+
+# ==========================================
+# Environment & Dependencies
+# ==========================================
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+yarn.lock
+
+# ==========================================
+# Laravel & Framework
+# ==========================================
+laravel-app/.env
+laravel-app/.env.local
+laravel-app/storage/
+laravel-app/bootstrap/cache/
+
+# ==========================================
+# Upload & Storage (Gunakan Cloudinary)
+# ==========================================
+uploads/
+storage/
+temp/
+cache/
+*.tmp
+*.bak
+
+# ==========================================
+# System & IDE Files
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# Logs & Debug
+# ==========================================
+*.log
+debug/
+error_log
+php_error_log
+debug-*.php
+
+# ==========================================
+# Temporary Files
+# ==========================================
+~*
+*.bak
+*.backup
+*.swp
+*.tmp
+
+# ==========================================
+# Database (Jika Ada File Lokal)
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# ==========================================
+# Admin Temp Files
+# ==========================================
+admin/temp_check.txt
+admin/temp/
+
+# ==========================================
+# OS Specific
+# ==========================================
+.gitkeep
+.htaccess.backup
