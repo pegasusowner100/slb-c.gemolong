@@ -233,6 +233,8 @@ include 'components/head.php';
 <body class="bg-brand-bg text-brand-dark font-sans">
   <?php include 'components/navbar.php'; ?>
 
+  <div class="relative border-l border-r border-brand-border/50">
+
   <!-- HERO -->
   <?php if (!empty($homepageSections['hero'])): ?>
   <section class="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
@@ -1719,5 +1721,7 @@ include 'components/head.php';
       initPagination('Video');
     })();
   </script>
+
+  </div>
 
 <?php include 'components/footer.php'; ?>

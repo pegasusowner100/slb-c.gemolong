@@ -100,8 +100,6 @@ $bukuPaketPercent = min(100, max(0, round($bukuPaketCount / 600 * 100)));
         </div>
         <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
       </div>
-        <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
-      </div>
     <?php endif; ?>
     <div class="glass-section">
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
