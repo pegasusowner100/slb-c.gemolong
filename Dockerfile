@@ -20,6 +20,8 @@ RUN apt-get update \
     && a2dismod mpm_event mpm_worker 2>/dev/null || true \
     && a2enmod mpm_prefork \
     && a2enmod rewrite \
+    && echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+    && echo "DirectoryIndex index.php index.html" >> /etc/apache2/apache2.conf \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
