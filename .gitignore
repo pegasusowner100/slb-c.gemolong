@@ -2,7 +2,6 @@
 # KEAMANAN - API Keys & Credentials (JANGAN UPLOAD)
 # ==========================================
 includes/config.php
-includes/supabase.php
 includes/cloudinary.php
 includes/session.php
 .env
