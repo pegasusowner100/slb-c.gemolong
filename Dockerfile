@@ -22,6 +22,8 @@ RUN apt-get update \
 
 WORKDIR /var/www/html
 COPY . /var/www/html/
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY generate-config.sh /generate-config.sh
 
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type d -exec chmod 755 {} \; \
