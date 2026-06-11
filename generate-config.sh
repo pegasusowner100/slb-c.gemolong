@@ -32,6 +32,22 @@ ADMIN_PASSWORD_HASH="${ADMIN_PASSWORD_HASH:-your_hashed_password_here}"
 SITE_NAME="${SITE_NAME:-SLB-C YPSLB Gemolong}"
 BASE_URL="${BASE_URL:-${BASE_PATH:-/}}"
 
+# Normalize BASE_URL for root deployment and remove trailing slash
+normalize_base_url() {
+    url="$1"
+    if [ "$url" = "/web_sekolah" ] || [ "$url" = "/web_sekolah/" ]; then
+        echo "/"
+        return
+    fi
+    url="${url%/}"
+    if [ -z "$url" ]; then
+        echo "/"
+    else
+        echo "$url"
+    fi
+}
+BASE_URL="$(normalize_base_url "$BASE_URL")"
+
 # ── Escape values for use as sed replacement strings ──────────────────────────
 # Escapes: backslash, forward slash (delimiter), and & (sed back-reference)
 esc() {
