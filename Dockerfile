@@ -36,7 +36,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -exec chmod 644 {} \;
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+COPY generate-config.sh /generate-config.sh
+RUN chmod +x /docker-entrypoint.sh /generate-config.sh
 
 EXPOSE 8080
 CMD ["/docker-entrypoint.sh"]
