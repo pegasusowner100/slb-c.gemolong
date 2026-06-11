@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+echo "ENTRYPOINT: docker-entrypoint.sh version 2026-06-11"
+
+echo "CHECK: /generate-config.sh exists?" ; ls -la /generate-config.sh 2>/dev/null || true
+
 PORT="${PORT:-8080}"
 
 # Generate config.php from environment variables
