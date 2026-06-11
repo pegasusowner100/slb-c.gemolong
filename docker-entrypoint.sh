@@ -4,16 +4,22 @@ set -e
 PORT="${PORT:-8080}"
 
 # Generate config.php from environment variables
-if [ -x /generate-config.sh ]; then
-    /generate-config.sh
-elif [ -f /var/www/html/generate-config.sh ]; then
-    chmod +x /var/www/html/generate-config.sh 2>/dev/null || true
-    /var/www/html/generate-config.sh
-elif [ -f /usr/src/app/generate-config.sh ]; then
-    chmod +x /usr/src/app/generate-config.sh 2>/dev/null || true
-    /usr/src/app/generate-config.sh
-else
-    echo "ERROR: /generate-config.sh not found"
+for path in /generate-config.sh /var/www/html/generate-config.sh /usr/src/app/generate-config.sh; do
+    if [ -f "$path" ]; then
+        echo "Found config generator at $path"
+        ls -la "$path" || true
+        if [ -x "$path" ]; then
+            echo "Executing $path"
+            "$path"
+        else
+            echo "$path is not executable, running with sh"
+            sh "$path"
+        fi
+        break
+    fi
+done
+if [ $? -ne 0 ]; then
+    echo "ERROR: config generator failed or not found"
     echo "Looking for fallback locations..."
     ls -la / || true
     ls -la /var/www/html || true
