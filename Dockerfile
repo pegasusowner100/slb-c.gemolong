@@ -11,11 +11,12 @@ RUN apt-get update \
         libjpeg-dev \
         libfreetype6-dev \
         libxml2-dev \
+        libcurl4-openssl-dev \
         zip \
         unzip \
         git \
     && docker-php-ext-configure zip \
-    && docker-php-ext-install zip \
+    && docker-php-ext-install zip curl \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
