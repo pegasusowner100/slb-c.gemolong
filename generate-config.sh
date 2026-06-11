@@ -30,7 +30,7 @@ ADMIN_PASSWORD_SALT="${ADMIN_PASSWORD_SALT:-your_unique_salt_here}"
 ADMIN_PASSWORD_HASH="${ADMIN_PASSWORD_HASH:-your_hashed_password_here}"
 
 SITE_NAME="${SITE_NAME:-SLB-C YPSLB Gemolong}"
-BASE_URL="${BASE_URL:-/web_sekolah}"
+BASE_URL="${BASE_URL:-${BASE_PATH:-/}}"
 
 # ── Escape values for use as sed replacement strings ──────────────────────────
 # Escapes: backslash, forward slash (delimiter), and & (sed back-reference)

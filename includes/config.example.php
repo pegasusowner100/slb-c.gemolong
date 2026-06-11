@@ -10,7 +10,7 @@
 // Website Configuration
 // ==========================================
 define('SITE_NAME', 'SLB-C YPSLB Gemolong');
-define('BASE_URL', '/web_sekolah'); // Tanpa trailing slash
+define('BASE_URL', '/'); // Tanpa trailing slash; gunakan '/' untuk root deployment
 
 // ==========================================
 // Supabase Configuration (Online Database)
