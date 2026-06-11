@@ -4,7 +4,22 @@ set -e
 PORT="${PORT:-8080}"
 
 # Generate config.php from environment variables
-/generate-config.sh
+if [ -x /generate-config.sh ]; then
+    /generate-config.sh
+elif [ -f /var/www/html/generate-config.sh ]; then
+    chmod +x /var/www/html/generate-config.sh 2>/dev/null || true
+    /var/www/html/generate-config.sh
+elif [ -f /usr/src/app/generate-config.sh ]; then
+    chmod +x /usr/src/app/generate-config.sh 2>/dev/null || true
+    /usr/src/app/generate-config.sh
+else
+    echo "ERROR: /generate-config.sh not found"
+    echo "Looking for fallback locations..."
+    ls -la / || true
+    ls -la /var/www/html || true
+    ls -la /usr/src/app || true
+    exit 1
+fi
 
 # Disable conflicting Apache MPM modules and enable prefork only
 if command -v a2dismod >/dev/null 2>&1; then
