@@ -17,6 +17,8 @@ RUN apt-get update \
         git \
     && docker-php-ext-configure zip \
     && docker-php-ext-install zip curl \
+    && a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
