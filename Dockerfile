@@ -1,3 +1,15 @@
+FROM php:8.1-apache
+
+# Copy application files
+COPY . /var/www/html/
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && a2enmod rewrite
+
+EXPOSE 80
+
+CMD ["apache2-foreground"]
 FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
