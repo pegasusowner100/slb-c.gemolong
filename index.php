@@ -1845,8 +1845,12 @@ include 'components/head.php';
   </div>
 
   <!-- DETAIL MODAL UNTUK PROGRAM & FASILITAS -->
-  <div id="detailCardModal" class="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-50 hidden px-4 py-6 pointer-events-none">
-    <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl transform transition-all flex flex-col max-h-[80vh]">
+  <div id="detailCardModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden px-4 py-6">
+    <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl transform transition-all flex flex-col max-h-[80vh] relative">
+      <!-- Close Button (X) -->
+      <button onclick="closeDetailCardModal()" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors focus:outline-none" title="Tutup">
+        <iconify-icon icon="lucide:x" class="w-5 h-5"></iconify-icon>
+      </button>
       <!-- Header / Image -->
       <div class="relative h-64 sm:h-80 w-full bg-slate-100 flex-shrink-0">
         <img id="detailModalImg" src="" alt="Detail Image" class="w-full h-full object-cover">
