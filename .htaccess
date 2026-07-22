@@ -3,8 +3,8 @@ DirectoryIndex index.php
 # Aktifkan mod_rewrite jika diperlukan
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    # Use the subfolder base for this local deployment
-    RewriteBase /web_sekolah_KS_002/
+    # RewriteBase is removed to make the rules environment-agnostic (local subfolder & production root)
+    # RewriteBase /web_sekolah_KS_002/
 
     # Redirect direct .php requests to clean URL without extension (preserve base)
     RewriteCond %{THE_REQUEST} \s/([^\s?]+)\.php[?\s] [NC]
