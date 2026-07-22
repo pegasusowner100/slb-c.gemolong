@@ -1,9 +1,10 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
 
-$title = "Kelola Rencana Program — " . SITE_NAME;
+$title = "Kelola Rencana Program — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Kelola Rencana Program";
 $success = '';
 $error = '';
@@ -19,13 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_rencana'])) {
             'durasi' => trim($_POST['durasi']),
             'target' => trim($_POST['target']),
             'status' => $_POST['status'],
+            'jenis' => $_POST['jenis'],
             'urutan' => intval($_POST['urutan'])
         ];
         $result = supabaseInsert('rencana_program', $data);
         if ($result['success']) {
-            $success = 'Rencana Program berhasil ditambahkan!';
+          $success = 'Rencana Program berhasil ditambahkan!';
         } else {
-            $error = 'Gagal menambahkan Rencana Program! Error: ' . json_encode($result);
+          $error = 'Gagal menambahkan Rencana Program: ' . ($result['error'] ?? json_encode($result['data'] ?? $result));
         }
     }
 }
@@ -42,14 +44,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_rencana'])) {
             'durasi' => trim($_POST['edit_durasi']),
             'target' => trim($_POST['edit_target']),
             'status' => $_POST['edit_status'],
+            'jenis' => $_POST['edit_jenis'],
             'urutan' => intval($_POST['edit_urutan']),
             'updated_at' => date('c')
         ];
         $result = supabaseUpdate('rencana_program', $data, $rencanaprogramId);
         if ($result['success']) {
-            $success = 'Rencana Program berhasil diedit!';
+          $success = 'Rencana Program berhasil diedit!';
         } else {
-            $error = 'Gagal edit Rencana Program! Error: ' . json_encode($result);
+          $error = 'Gagal edit Rencana Program: ' . ($result['error'] ?? json_encode($result['data'] ?? $result));
         }
     }
 }
@@ -61,9 +64,9 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     } else {
         $result = supabaseDelete('rencana_program', $_GET['delete']);
         if ($result['success']) {
-            $success = 'Rencana Program berhasil dihapus!';
+          $success = 'Rencana Program berhasil dihapus!';
         } else {
-            $error = 'Gagal menghapus Rencana Program!';
+          $error = 'Gagal menghapus Rencana Program: ' . ($result['error'] ?? 'Unknown error');
         }
     }
 }
@@ -132,6 +135,7 @@ include 'components/sidebar.php';
                   <tr>
                     <th class="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider">No</th>
                     <th class="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider">Nama</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider">Jenis</th>
                     <th class="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider">Durasi</th>
                     <th class="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider">Target</th>
                     <th class="text-left px-4 py-4 text-xs font-bold uppercase tracking-wider">Status</th>
@@ -144,6 +148,11 @@ include 'components/sidebar.php';
                     <tr class="hover:bg-[#F9F8F4] transition-all duration-200">
                       <td class="px-4 py-4 text-sm text-[#5F6F65] font-medium"><?php echo $no++; ?></td>
                       <td class="px-4 py-4 text-sm font-semibold text-[#1F2D26]"><?php echo htmlspecialchars($rencana['nama']); ?></td>
+                      <td class="px-4 py-4 text-sm">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase <?php echo $rencana['jenis'] === 'pendek' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'; ?>">
+                          <?php echo $rencana['jenis'] === 'pendek' ? 'Program Jangka Pendek' : 'Program Jangka Panjang'; ?>
+                        </span>
+                      </td>
                       <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($rencana['durasi'] ?? '-'); ?></td>
                       <td class="px-4 py-4 text-sm text-[#5F6F65] line-clamp-2"><?php echo htmlspecialchars($rencana['target'] ?? '-'); ?></td>
                       <td class="px-4 py-4 text-sm">
@@ -161,6 +170,7 @@ include 'components/sidebar.php';
                             '<?php echo addslashes(htmlspecialchars($rencana['durasi'] ?? '')); ?>',
                             '<?php echo addslashes(htmlspecialchars($rencana['target'] ?? '')); ?>',
                             '<?php echo htmlspecialchars($rencana['status']); ?>',
+                            '<?php echo htmlspecialchars($rencana['jenis'] ?? 'pendek'); ?>',
                             '<?php echo htmlspecialchars($rencana['urutan']); ?>'
                           )" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
                             <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
@@ -197,6 +207,13 @@ include 'components/sidebar.php';
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Nama Rencana Program</label>
             <input type="text" name="nama" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Jenis Program</label>
+            <select name="jenis" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
+              <option value="pendek">Program Jangka Pendek</option>
+              <option value="panjang">Program Jangka Panjang</option>
+            </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Durasi</label>
@@ -248,6 +265,13 @@ include 'components/sidebar.php';
             <input type="text" name="edit_nama" id="edit_nama" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
           </div>
           <div>
+            <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Jenis Program</label>
+            <select name="edit_jenis" id="edit_jenis" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
+              <option value="pendek">Program Jangka Pendek</option>
+              <option value="panjang">Program Jangka Panjang</option>
+            </select>
+          </div>
+          <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Durasi</label>
             <input type="text" name="edit_durasi" id="edit_durasi" placeholder="Misal: Semester 1 2024" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
           </div>
@@ -284,13 +308,14 @@ include 'components/sidebar.php';
       document.getElementById('modalRencana').classList.remove('hidden');
     }
 
-    function openEditModal(id, nama, deskripsi, durasi, target, status, urutan) {
+    function openEditModal(id, nama, deskripsi, durasi, target, status, jenis, urutan) {
       document.getElementById('edit_rencanaprogram_id').value = id;
       document.getElementById('edit_nama').value = nama;
       document.getElementById('edit_deskripsi').value = deskripsi;
       document.getElementById('edit_durasi').value = durasi;
       document.getElementById('edit_target').value = target;
       document.getElementById('edit_status').value = status;
+      document.getElementById('edit_jenis').value = jenis;
       document.getElementById('edit_urutan').value = urutan;
       document.getElementById('modalEditRencana').classList.remove('hidden');
     }

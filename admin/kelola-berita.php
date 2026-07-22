@@ -1,10 +1,11 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Berita — " . SITE_NAME;
+$title = "Kelola Berita — SLB BC KARYA SEJAHTERA" . SITE_NAME;
 $page_title = "Kelola Berita";
 $success = '';
 $error = '';
@@ -14,9 +15,9 @@ $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 // Handle add berita
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_berita'])) {
-    if (!$supabaseConnected) {
-        $error = 'Gagal menyimpan: Supabase tidak terhubung!';
-    } else {
+  if (!$supabaseConnected) {
+    $error = 'Gagal menyimpan: Database tidak terhubung!';
+  } else {
         $judul = trim($_POST['judul']);
         $kategori = $_POST['kategori'];
         $konten = trim($_POST['konten']);
@@ -25,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_berita'])) {
         $status = $_POST['status'];
         $thumbnail = 'https://picsum.photos/seed/' . time() . '/800/400.jpg'; // Default
         
-        // Handle file upload
+        // Handle file upload thumbnail
         if (isset($_FILES['thumbnail_file']) && $_FILES['thumbnail_file']['error'] === UPLOAD_ERR_OK) {
             $uploadResult = uploadToCloudinary($_FILES['thumbnail_file'], 'berita');
             if ($uploadResult['success']) {
@@ -35,31 +36,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_berita'])) {
             }
         }
 
-        $data = [
-            'judul' => $judul,
-            'slug' => $slug,
-            'konten' => $konten,
-            'gambar' => $thumbnail,
-            'kategori' => $kategori,
-            'tanggal_upload' => $tanggal_publish,
-            'status' => $status
-        ];
-        
-        $result = supabaseInsert('berita', $data);
-        
-        if ($result['success']) {
-            $success = 'Berita berhasil ditambahkan!';
-        } else {
-            $error = 'Gagal menambahkan berita!';
+        // Handle video_url and video_file
+        $video_url = trim($_POST['video_url'] ?? '');
+        if (isset($_FILES['video_file']) && $_FILES['video_file']['error'] === UPLOAD_ERR_OK) {
+            $videoUploadResult = uploadToCloudinary($_FILES['video_file'], 'berita_video');
+            if ($videoUploadResult['success']) {
+                $video_url = $videoUploadResult['url'];
+            } else {
+                $error = 'Gagal upload video: ' . ($videoUploadResult['error'] ?? 'Unknown error');
+            }
+        }
+
+        if (empty($error)) {
+            $data = [
+                'judul' => $judul,
+                'slug' => $slug,
+                'konten' => $konten,
+                'gambar' => $thumbnail,
+                'kategori' => $kategori,
+                'tanggal' => $tanggal_publish,
+                'tanggal_upload' => $tanggal_publish,
+                'status' => $status,
+                'video_url' => !empty($video_url) ? $video_url : null
+            ];
+            
+            $result = supabaseInsert('berita', $data);
+            
+            if ($result['success']) {
+                $success = 'Berita berhasil ditambahkan!';
+            } else {
+                $error = 'Gagal menambahkan berita: ' . ($result['error'] ?? 'Unknown error');
+            }
         }
     }
 }
 
 // Handle edit berita
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_berita'])) {
-    if (!$supabaseConnected) {
-        $error = 'Gagal menyimpan: Supabase tidak terhubung!';
-    } else {
+  if (!$supabaseConnected) {
+    $error = 'Gagal menyimpan: Database tidak terhubung!';
+  } else {
         $beritaId = $_POST['berita_id'];
         $judul = trim($_POST['edit_judul']);
         $kategori = $_POST['edit_kategori'];
@@ -70,8 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_berita'])) {
         // Get current data to preserve gambar if no new file
         $currentResult = supabaseSelect('berita', ['id' => 'eq.' . $beritaId, 'limit' => 1]);
         $currentThumbnail = 'https://picsum.photos/seed/' . time() . '/800/400.jpg';
+        $currentVideoUrl = null;
         if ($currentResult['success'] && !empty($currentResult['data'])) {
             $currentThumbnail = $currentResult['data'][0]['gambar'] ?? $currentThumbnail;
+            $currentVideoUrl = $currentResult['data'][0]['video_url'] ?? null;
         }
         
         // Handle file upload
@@ -84,31 +102,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_berita'])) {
             }
         }
 
-        $data = [
-            'judul' => $judul,
-            'konten' => $konten,
-            'gambar' => $currentThumbnail,
-            'kategori' => $kategori,
-            'tanggal_upload' => $tanggal_publish,
-            'status' => $status
-        ];
-        
-        $result = supabaseUpdate('berita', $data, $beritaId);
-        
-        if ($result['success']) {
-            $success = 'Berita berhasil diperbarui!';
-        } else {
-            $error = 'Gagal memperbarui berita!';
+        // Handle video_url and video_file
+        $video_url = trim($_POST['edit_video_url'] ?? '');
+        if (isset($_FILES['edit_video_file']) && $_FILES['edit_video_file']['error'] === UPLOAD_ERR_OK) {
+            $videoUploadResult = uploadToCloudinary($_FILES['edit_video_file'], 'berita_video');
+            if ($videoUploadResult['success']) {
+                $video_url = $videoUploadResult['url'];
+            } else {
+                $error = 'Gagal upload video: ' . ($videoUploadResult['error'] ?? 'Unknown error');
+            }
+        } else if (empty($video_url) && !empty($currentVideoUrl)) {
+            // If url field is cleared and no file is uploaded, keep old or clear? 
+            // We clear if they cleared the input text. If they didn't touch it, we keep.
+            // Let's pass the value from the form input, if it is empty, we clear it (set to null).
+            $video_url = null;
+        }
+
+        if (empty($error)) {
+            $data = [
+                'judul' => $judul,
+                'konten' => $konten,
+                'gambar' => $currentThumbnail,
+                'kategori' => $kategori,
+                'tanggal' => $tanggal_publish,
+                'tanggal_upload' => $tanggal_publish,
+                'status' => $status,
+                'video_url' => !empty($video_url) ? $video_url : null
+            ];
+            
+            $result = supabaseUpdate('berita', $data, $beritaId);
+            
+            if ($result['success']) {
+                $success = 'Berita berhasil diperbarui!';
+            } else {
+                $error = 'Gagal memperbarui berita: ' . ($result['error'] ?? 'Unknown error');
+            }
         }
     }
 }
 
 // Handle delete
 if (isset($_GET['delete']) && !empty($_GET['delete'])) {
-    if (!$supabaseConnected) {
-        $error = 'Gagal menghapus: Supabase tidak terhubung!';
-    } else {
-        $result = supabaseDelete('berita', $_GET['delete']);
+  if (!$supabaseConnected) {
+    $error = 'Gagal menghapus: Database tidak terhubung!';
+  } else {
+    $result = supabaseDelete('berita', $_GET['delete']);
         if ($result['success']) {
             $success = 'Berita berhasil dihapus!';
         } else {
@@ -117,16 +155,17 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     }
 }
 
-// Get all berita from Supabase with search
+// Get all berita from database with search
 $all_berita = [];
 if ($supabaseConnected) {
     $filters = ['order' => 'tanggal.desc'];
     if (!empty($search_query)) {
+        // Supabase doesn't support LIKE directly, use ilike
         $filters['or'] = "(judul.ilike.%$search_query%,konten.ilike.%$search_query%,kategori.ilike.%$search_query%)";
     }
-    $beritaResult = supabaseSelect('berita', $filters);
-    if ($beritaResult['success']) {
-        $all_berita = $beritaResult['data'];
+    $result = supabaseSelect('berita', $filters);
+    if ($result['success']) {
+        $all_berita = $result['data'];
     }
 }
 
@@ -165,7 +204,7 @@ include 'components/sidebar.php';
                   <iconify-icon icon="lucide:table" class="inline mr-1"></iconify-icon> Tabel
                 </button>
               </div>
-              <button onclick="document.getElementById('modalBerita').classList.remove('hidden')" <?php echo !$supabaseConnected ? 'disabled' : ''; ?> class="bg-[#3E6B4E] text-white text-xs font-bold px-6 py-3 rounded-lg hover:bg-[#2F5B41] transition-colors uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
+              <button onclick="document.getElementById('modalBerita').classList.remove('hidden')" <?php echo !$dbConnected ? 'disabled' : ''; ?> class="bg-[#3E6B4E] text-white text-xs font-bold px-6 py-3 rounded-lg hover:bg-[#2F5B41] transition-colors uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
                 <iconify-icon icon="lucide:plus"></iconify-icon>
                 Tambah Berita Baru
               </button>
@@ -239,7 +278,7 @@ include 'components/sidebar.php';
                   <p class="text-sm text-[#5F6F65] line-clamp-3 mb-4"><?php echo htmlspecialchars(strip_tags($b['konten'] ?? '')); ?></p>
                   <div class="flex items-center justify-between pt-4 border-t border-[#E8E4D9]">
                     <div class="flex items-center gap-2">
-                      <button onclick="openEditBeritaModal('<?php echo htmlspecialchars($b['id']); ?>', '<?php echo addslashes(htmlspecialchars($b['judul'])); ?>', '<?php echo htmlspecialchars($b['kategori'] ?? 'Umum'); ?>', '<?php echo addslashes(htmlspecialchars($b['konten'] ?? '')); ?>', '<?php echo htmlspecialchars($b['gambar'] ?? ''); ?>', '<?php echo isset($b['tanggal_upload']) ? date('Y-m-d', strtotime($b['tanggal_upload'])) : date('Y-m-d'); ?>', '<?php echo htmlspecialchars($b['status'] ?? 'published'); ?>')" class="p-2 text-[#3E6B4E] hover:bg-[#3E6B4E]/10 rounded transition-colors">
+                      <button onclick="openEditBeritaModal('<?php echo htmlspecialchars($b['id']); ?>', '<?php echo addslashes(htmlspecialchars($b['judul'])); ?>', '<?php echo htmlspecialchars($b['kategori'] ?? 'Umum'); ?>', '<?php echo addslashes(htmlspecialchars($b['konten'] ?? '')); ?>', '<?php echo htmlspecialchars($b['gambar'] ?? ''); ?>', '<?php echo isset($b['tanggal_upload']) ? date('Y-m-d', strtotime($b['tanggal_upload'])) : date('Y-m-d'); ?>', '<?php echo htmlspecialchars($b['status'] ?? 'published'); ?>', '<?php echo htmlspecialchars($b['video_url'] ?? ''); ?>')" class="p-2 text-[#3E6B4E] hover:bg-[#3E6B4E]/10 rounded transition-colors">
                         <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
                       </button>
                       <a href="?delete=<?php echo $b['id']; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?>" onclick="return confirm('Yakin ingin menghapus berita ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded transition-colors">
@@ -289,7 +328,7 @@ include 'components/sidebar.php';
                         </td>
                         <td class="px-4 py-4 text-center">
                           <div class="flex items-center justify-center gap-2">
-                            <button onclick="openEditBeritaModal('<?php echo htmlspecialchars($b['id']); ?>', '<?php echo addslashes(htmlspecialchars($b['judul'])); ?>', '<?php echo htmlspecialchars($b['kategori'] ?? 'Umum'); ?>', '<?php echo addslashes(htmlspecialchars($b['konten'] ?? '')); ?>', '<?php echo htmlspecialchars($b['gambar'] ?? ''); ?>', '<?php echo isset($b['tanggal_upload']) ? date('Y-m-d', strtotime($b['tanggal_upload'])) : date('Y-m-d'); ?>', '<?php echo htmlspecialchars($b['status'] ?? 'published'); ?>')" class="p-2 text-blue-500 hover:bg-blue-50 rounded transition-colors">
+                            <button onclick="openEditBeritaModal('<?php echo htmlspecialchars($b['id']); ?>', '<?php echo addslashes(htmlspecialchars($b['judul'])); ?>', '<?php echo htmlspecialchars($b['kategori'] ?? 'Umum'); ?>', '<?php echo addslashes(htmlspecialchars($b['konten'] ?? '')); ?>', '<?php echo htmlspecialchars($b['gambar'] ?? ''); ?>', '<?php echo isset($b['tanggal_upload']) ? date('Y-m-d', strtotime($b['tanggal_upload'])) : date('Y-m-d'); ?>', '<?php echo htmlspecialchars($b['status'] ?? 'published'); ?>', '<?php echo htmlspecialchars($b['video_url'] ?? ''); ?>')" class="p-2 text-blue-500 hover:bg-blue-50 rounded transition-colors">
                               <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
                             </button>
                             <a href="?delete=<?php echo $b['id']; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?>" onclick="return confirm('Yakin ingin menghapus berita ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded transition-colors">
@@ -324,12 +363,12 @@ include 'components/sidebar.php';
           <div class="grid md:grid-cols-2 gap-5">
             <div>
               <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Judul Berita</label>
-              <input type="text" name="judul" required placeholder="Masukkan judul berita..." class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+              <input type="text" name="judul" required placeholder="Masukkan judul berita..." class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Kategori</label>
-                <select name="kategori" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <select name="kategori" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
                   <option value="Umum">Umum</option>
                   <option value="Prestasi">Prestasi</option>
                   <option value="Kegiatan">Kegiatan</option>
@@ -339,7 +378,7 @@ include 'components/sidebar.php';
               </div>
               <div>
                 <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Status</label>
-                <select name="status" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <select name="status" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
                   <option value="published">Publish</option>
                   <option value="draft">Draft</option>
                 </select>
@@ -348,22 +387,34 @@ include 'components/sidebar.php';
           </div>
           <div>
             <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Tanggal Publish</label>
-            <input type="date" name="tanggal_publish" value="<?php echo date('Y-m-d'); ?>" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+            <input type="date" name="tanggal_publish" value="<?php echo date('Y-m-d'); ?>" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Thumbnail Berita</label>
-            <input type="file" name="thumbnail_file" accept="image/*" id="thumbnailInput" onchange="previewFile(event, 'thumbnailPreview')" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
-            <div id="thumbnailPreview" class="mt-3">
-              <p class="text-xs text-slate-600 italic">Preview thumbnail akan muncul di sini</p>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Thumbnail Berita</label>
+              <input type="file" name="thumbnail_file" accept="image/*" id="thumbnailInput" onchange="previewFile(event, 'thumbnailPreview')" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
+              <div id="thumbnailPreview" class="mt-3">
+                <p class="text-xs text-slate-600 italic">Preview thumbnail akan muncul di sini</p>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">URL Video Berita (YouTube / Link Langsung)</label>
+                <input type="url" name="video_url" placeholder="https://www.youtube.com/watch?v=... atau link .mp4" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Atau Upload File Video Berita</label>
+                <input type="file" name="video_file" accept="video/*" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
+              </div>
             </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Konten Berita</label>
-            <textarea name="konten" rows="8" required placeholder="Tulis konten berita di sini..." class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm resize-none" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>></textarea>
+            <textarea name="konten" rows="8" required placeholder="Tulis konten berita di sini..." class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm resize-none" <?php echo !$dbConnected ? 'disabled' : ''; ?>></textarea>
           </div>
           <div class="flex items-center gap-4 pt-4 border-t border-slate-200">
             <button type="button" onclick="document.getElementById('modalBerita').classList.add('hidden')" class="flex-1 px-6 py-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#1F2D26] transition-all font-semibold text-sm uppercase tracking-widest">Batal</button>
-            <button type="submit" name="tambah_berita" class="flex-1 bg-gradient-to-r from-[#3E6B4E] to-[#3E6B4E]/80 hover:from-[#2F5340] hover:to-[#2F5340]/80 text-white text-xs font-bold px-8 py-3 rounded-lg transition-all uppercase tracking-widest shadow-md hover:shadow-lg" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>Simpan Berita</button>
+            <button type="submit" name="tambah_berita" class="flex-1 bg-gradient-to-r from-[#3E6B4E] to-[#3E6B4E]/80 hover:from-[#2F5340] hover:to-[#2F5340]/80 text-white text-xs font-bold px-8 py-3 rounded-lg transition-all uppercase tracking-widest shadow-md hover:shadow-lg" <?php echo !$dbConnected ? 'disabled' : ''; ?>>Simpan Berita</button>
           </div>
         </form>
       </div>
@@ -386,12 +437,12 @@ include 'components/sidebar.php';
           <div class="grid md:grid-cols-2 gap-5">
             <div>
               <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Judul Berita</label>
-              <input type="text" name="edit_judul" id="edit_judul" required placeholder="Masukkan judul berita..." class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+              <input type="text" name="edit_judul" id="edit_judul" required placeholder="Masukkan judul berita..." class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-bold text-[#1F2D26] uppercase mb-2">Kategori</label>
-                <select name="edit_kategori" id="edit_kategori" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <select name="edit_kategori" id="edit_kategori" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
                   <option value="Umum">Umum</option>
                   <option value="Prestasi">Prestasi</option>
                   <option value="Kegiatan">Kegiatan</option>
@@ -401,7 +452,7 @@ include 'components/sidebar.php';
               </div>
               <div>
                 <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Status</label>
-                <select name="edit_status" id="edit_status" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <select name="edit_status" id="edit_status" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
                   <option value="published">Publish</option>
                   <option value="draft">Draft</option>
                 </select>
@@ -410,22 +461,34 @@ include 'components/sidebar.php';
           </div>
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Tanggal Publish</label>
-            <input type="date" name="edit_tanggal_publish" id="edit_tanggal_publish" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+            <input type="date" name="edit_tanggal_publish" id="edit_tanggal_publish" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Thumbnail Berita (biarkan kosong untuk tidak mengedit)</label>
-            <input type="file" name="edit_thumbnail_file" accept="image/*" id="editThumbnailInput" onchange="previewFile(event, 'editThumbnailPreview')" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
-            <div id="editThumbnailPreview" class="mt-3">
-              <p class="text-xs text-[#9FB5A5] italic">Preview thumbnail akan muncul di sini</p>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Thumbnail Berita (biarkan kosong untuk tidak mengedit)</label>
+              <input type="file" name="edit_thumbnail_file" accept="image/*" id="editThumbnailInput" onchange="previewFile(event, 'editThumbnailPreview')" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
+              <div id="editThumbnailPreview" class="mt-3">
+                <p class="text-xs text-[#9FB5A5] italic">Preview thumbnail akan muncul di sini</p>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">URL Video Berita (YouTube / Link Langsung)</label>
+                <input type="url" name="edit_video_url" id="edit_video_url" placeholder="https://www.youtube.com/watch?v=... atau link .mp4" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Atau Upload File Video Baru</label>
+                <input type="file" name="edit_video_file" accept="video/*" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$dbConnected ? 'disabled' : ''; ?>>
+              </div>
             </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Konten Berita</label>
-            <textarea name="edit_konten" id="edit_konten" rows="8" required placeholder="Tulis konten berita di sini..." class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm resize-none" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>></textarea>
+            <textarea name="edit_konten" id="edit_konten" rows="8" required placeholder="Tulis konten berita di sini..." class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm resize-none" <?php echo !$dbConnected ? 'disabled' : ''; ?>></textarea>
           </div>
           <div class="flex items-center gap-4 pt-4">
             <button type="button" onclick="document.getElementById('modalEditBerita').classList.add('hidden')" class="flex-1 px-6 py-3 rounded-lg border-2 border-[#E8E4D9] text-[#5F6F65] hover:bg-[#F9F8F4] transition-all font-semibold text-sm">Batal</button>
-            <button type="submit" name="edit_berita" class="flex-1 bg-[#3E6B4E] text-white text-xs font-bold px-8 py-3 rounded-lg hover:bg-[#2F5B41] transition-all uppercase tracking-widest" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>Simpan Perubahan</button>
+            <button type="submit" name="edit_berita" class="flex-1 bg-[#3E6B4E] text-white text-xs font-bold px-8 py-3 rounded-lg hover:bg-[#2F5B41] transition-all uppercase tracking-widest" <?php echo !$dbConnected ? 'disabled' : ''; ?>>Simpan Perubahan</button>
           </div>
         </form>
       </div>
@@ -459,13 +522,14 @@ include 'components/sidebar.php';
       }
     }
 
-    function openEditBeritaModal(id, judul, kategori, konten, gambar, tanggalPublish, status) {
+    function openEditBeritaModal(id, judul, kategori, konten, gambar, tanggalPublish, status, videoUrl) {
       document.getElementById('edit_berita_id').value = id;
       document.getElementById('edit_judul').value = judul;
       document.getElementById('edit_kategori').value = kategori;
       document.getElementById('edit_konten').value = konten;
       document.getElementById('edit_tanggal_publish').value = tanggalPublish;
       document.getElementById('edit_status').value = status;
+      document.getElementById('edit_video_url').value = videoUrl || '';
 
       document.getElementById('editThumbnailPreview').innerHTML = `
         <img src="${gambar}" alt="Current Thumbnail" class="w-full h-48 object-cover rounded-lg border-2 border-[#E8E4D9]">

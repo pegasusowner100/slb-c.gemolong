@@ -1,12 +1,13 @@
 
 
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Fasilitas — SLB-C YPSLB Gemolong";
+$title = "Kelola Fasilitas — SLB BC KARYA SEJAHTERA";
 $page_title = "Kelola Fasilitas";
 $success = '';
 $error = '';
@@ -31,14 +32,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_fasilitas'])) 
         $data = [
             'nama' => $_POST['nama'],
             'deskripsi' => $_POST['deskripsi'],
+            'icon' => $_POST['icon'] ?? 'mdi:office-building',
             'gambar' => $gambar,
             'urutan' => intval($_POST['urutan'])
         ];
         $result = supabaseInsert('fasilitas', $data);
         if ($result['success']) {
-            $success = 'Fasilitas berhasil ditambahkan!';
+          $success = 'Fasilitas berhasil ditambahkan!';
         } else {
-            $error = 'Gagal menambahkan fasilitas! Error: ' . json_encode($result);
+          $error = 'Gagal menambahkan fasilitas: ' . ($result['error'] ?? json_encode($result['data'] ?? $result));
         }
     }
 }
@@ -70,14 +72,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_fasilitas'])) {
         $data = [
             'nama' => $_POST['edit_nama'],
             'deskripsi' => $_POST['edit_deskripsi'],
+            'icon' => $_POST['edit_icon'] ?? 'mdi:office-building',
             'gambar' => $currentGambar,
             'urutan' => intval($_POST['edit_urutan'])
         ];
         $result = supabaseUpdate('fasilitas', $data, $fasilitasId);
         if ($result['success']) {
-            $success = 'Fasilitas berhasil diedit!';
+          $success = 'Fasilitas berhasil diedit!';
         } else {
-            $error = 'Gagal edit fasilitas! Error: ' . json_encode($result);
+          $error = 'Gagal edit fasilitas: ' . ($result['error'] ?? json_encode($result['data'] ?? $result));
         }
     }
 }
@@ -89,9 +92,9 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     } else {
         $result = supabaseDelete('fasilitas', $_GET['delete']);
         if ($result['success']) {
-            $success = 'Fasilitas berhasil dihapus!';
+          $success = 'Fasilitas berhasil dihapus!';
         } else {
-            $error = 'Gagal menghapus fasilitas!';
+          $error = 'Gagal menghapus fasilitas: ' . ($result['error'] ?? json_encode($result['data'] ?? $result));
         }
     }
 }
@@ -202,7 +205,8 @@ include 'components/sidebar.php';
                         '<?php echo addslashes(htmlspecialchars($fasilitas['nama'])); ?>',
                         '<?php echo addslashes(htmlspecialchars($fasilitas['deskripsi'])); ?>',
                         '<?php echo addslashes(htmlspecialchars($fasilitas['gambar'])); ?>',
-                        '<?php echo htmlspecialchars($fasilitas['urutan'] ?? 0); ?>'
+                        '<?php echo htmlspecialchars($fasilitas['urutan'] ?? 0); ?>',
+                        '<?php echo htmlspecialchars($fasilitas['icon'] ?? 'mdi:office-building'); ?>'
                       )" class="text-blue-500 hover:text-blue-700 transition-colors">
                         <iconify-icon icon="lucide:edit"></iconify-icon>
                       </button>
@@ -247,7 +251,8 @@ include 'components/sidebar.php';
                               '<?php echo addslashes(htmlspecialchars($fasilitas['nama'])); ?>',
                               '<?php echo addslashes(htmlspecialchars($fasilitas['deskripsi'])); ?>',
                               '<?php echo addslashes(htmlspecialchars($fasilitas['gambar'])); ?>',
-                              '<?php echo htmlspecialchars($fasilitas['urutan'] ?? 0); ?>'
+                              '<?php echo htmlspecialchars($fasilitas['urutan'] ?? 0); ?>',
+                              '<?php echo htmlspecialchars($fasilitas['icon'] ?? 'mdi:office-building'); ?>'
                             )" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
                               <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
                             </button>
@@ -281,6 +286,39 @@ include 'components/sidebar.php';
           </button>
         </div>
         <form method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+          <input type="hidden" name="tambah_fasilitas" value="1">
+          <div>
+            <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Icon (Lucide/Iconify Name)</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" name="icon" id="add_icon_fasilitas" oninput="updateIconPreview('add_icon_fasilitas', 'add_icon_preview_fasilitas')" placeholder="Contoh: mdi:office-building" class="flex-1 px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
+              <div class="w-12 h-12 bg-[#F9F8F4] border border-[#E8E4D9] rounded flex items-center justify-center text-2xl text-[#3E6B4E] flex-shrink-0">
+                <iconify-icon id="add_icon_preview_fasilitas" icon="mdi:office-building"></iconify-icon>
+              </div>
+            </div>
+            <div class="p-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg">
+              <span class="block text-[10px] font-bold text-[#9FB5A5] uppercase mb-2">Pilih Ikon Cepat:</span>
+              <div class="grid grid-cols-6 gap-2">
+                <button type="button" onclick="selectIcon('add_icon_fasilitas', 'add_icon_preview_fasilitas', 'mdi:office-building')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Gedung">
+                  <iconify-icon icon="mdi:office-building" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_fasilitas', 'add_icon_preview_fasilitas', 'lucide:home')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kelas/Rumah">
+                  <iconify-icon icon="lucide:home" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_fasilitas', 'add_icon_preview_fasilitas', 'lucide:book-open')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Perpustakaan">
+                  <iconify-icon icon="lucide:book-open" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_fasilitas', 'add_icon_preview_fasilitas', 'lucide:cpu')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Lab/Komputer">
+                  <iconify-icon icon="lucide:cpu" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_fasilitas', 'add_icon_preview_fasilitas', 'lucide:graduation-cap')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kepala Sekolah">
+                  <iconify-icon icon="lucide:graduation-cap" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_fasilitas', 'add_icon_preview_fasilitas', 'lucide:users')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Guru">
+                  <iconify-icon icon="lucide:users" class="text-lg"></iconify-icon>
+                </button>
+              </div>
+            </div>
+          </div>
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Nama Fasilitas</label>
             <input type="text" name="nama" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
@@ -322,6 +360,38 @@ include 'components/sidebar.php';
         </div>
         <form method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
           <input type="hidden" name="fasilitas_id" id="edit_fasilitas_id" value="">
+          <div>
+            <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Icon (Lucide/Iconify Name)</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" name="edit_icon" id="edit_icon_fasilitas" oninput="updateIconPreview('edit_icon_fasilitas', 'edit_icon_preview_fasilitas')" placeholder="Contoh: mdi:office-building" class="flex-1 px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
+              <div class="w-12 h-12 bg-[#F9F8F4] border border-[#E8E4D9] rounded flex items-center justify-center text-2xl text-[#3E6B4E] flex-shrink-0">
+                <iconify-icon id="edit_icon_preview_fasilitas" icon="mdi:office-building"></iconify-icon>
+              </div>
+            </div>
+            <div class="p-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg">
+              <span class="block text-[10px] font-bold text-[#9FB5A5] uppercase mb-2">Pilih Ikon Cepat:</span>
+              <div class="grid grid-cols-6 gap-2">
+                <button type="button" onclick="selectIcon('edit_icon_fasilitas', 'edit_icon_preview_fasilitas', 'mdi:office-building')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Gedung">
+                  <iconify-icon icon="mdi:office-building" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon_fasilitas', 'edit_icon_preview_fasilitas', 'lucide:home')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kelas/Rumah">
+                  <iconify-icon icon="lucide:home" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon_fasilitas', 'edit_icon_preview_fasilitas', 'lucide:book-open')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Perpustakaan">
+                  <iconify-icon icon="lucide:book-open" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon_fasilitas', 'edit_icon_preview_fasilitas', 'lucide:cpu')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Lab/Komputer">
+                  <iconify-icon icon="lucide:cpu" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon_fasilitas', 'edit_icon_preview_fasilitas', 'lucide:graduation-cap')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kepala Sekolah">
+                  <iconify-icon icon="lucide:graduation-cap" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon_fasilitas', 'edit_icon_preview_fasilitas', 'lucide:users')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Guru">
+                  <iconify-icon icon="lucide:users" class="text-lg"></iconify-icon>
+                </button>
+              </div>
+            </div>
+          </div>
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Nama Fasilitas</label>
             <input type="text" name="edit_nama" id="edit_nama_fasilitas" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
@@ -370,11 +440,26 @@ include 'components/sidebar.php';
       }
     }
 
-    function openEditFasilitasModal(id, nama, deskripsi, gambar, urutan) {
+    function selectIcon(inputId, previewId, iconName) {
+      document.getElementById(inputId).value = iconName;
+      updateIconPreview(inputId, previewId);
+    }
+
+    function updateIconPreview(inputId, previewId) {
+      const inputVal = document.getElementById(inputId).value;
+      const previewEl = document.getElementById(previewId);
+      if (previewEl) {
+        previewEl.setAttribute('icon', inputVal || 'mdi:office-building');
+      }
+    }
+
+    function openEditFasilitasModal(id, nama, deskripsi, gambar, urutan, icon) {
       document.getElementById('edit_fasilitas_id').value = id;
       document.getElementById('edit_nama_fasilitas').value = nama;
       document.getElementById('edit_deskripsi_fasilitas').value = deskripsi;
       document.getElementById('edit_urutan_fasilitas').value = urutan;
+      document.getElementById('edit_icon_fasilitas').value = icon || 'mdi:office-building';
+      updateIconPreview('edit_icon_fasilitas', 'edit_icon_preview_fasilitas');
       document.getElementById('editGambarPreviewFasilitas').innerHTML = `
         <img src="${gambar}" alt="Current Image" class="w-full h-40 object-cover rounded border border-[#E8E4D9]">
       `;

@@ -1,7 +1,9 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Dokumentasi & Galeri — " . SITE_NAME;
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/galeri');
+$title = "Dokumentasi & Galeri — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 
 // Fetch published galeri
 $all_galeri = [];
@@ -51,6 +53,12 @@ include '../components/head.php';
   <section id="galeri" class="py-24">
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Galeri</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Galeri Kegiatan</h2>
+          </div>
+        </div>
         <?php if(empty($all_galeri)): ?>
           <div class="text-center py-12">
             <iconify-icon icon="lucide:images" class="text-6xl text-brand-muted/30 mb-4"></iconify-icon>
@@ -102,15 +110,45 @@ include '../components/head.php';
                       $tanggal = isset($item['tanggal_upload']) ? new DateTime($item['tanggal_upload']) : null;
                       $formattedDate = $tanggal ? strftime('%d %B %Y', $tanggal->getTimestamp()) : '';
                     ?>
-                    <button type="button" data-galeri-index="<?php echo $item['_index']; ?>" class="group border border-brand-border/30 rounded-[28px] overflow-hidden shadow-sm bg-white hover:shadow-xl transition-shadow">
+                    <div data-galeri-index="<?php echo $item['_index']; ?>" class="group border border-brand-border/30 rounded-[28px] overflow-hidden shadow-sm bg-white hover:shadow-xl transition-shadow cursor-pointer">
                       <div class="h-56 overflow-hidden bg-[#4c3900]">
                         <img src="<?php echo htmlspecialchars($previewUrl); ?>" alt="<?php echo htmlspecialchars($item['judul'] ?? 'Foto galeri'); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                       </div>
                       <div class="px-4 pt-3 pb-4 bg-brand-bg/90">
                         <h3 class="text-base font-semibold text-brand-dark leading-tight"><?php echo htmlspecialchars($item['judul'] ?: 'Tanpa Judul'); ?></h3>
                         <p class="mt-2 text-xs uppercase tracking-[0.24em] text-brand-muted"><?php echo htmlspecialchars($formattedDate); ?></p>
+                        <!-- Share buttons row -->
+                        <div class="mt-3 flex items-center gap-2 text-brand-muted flex-nowrap overflow-x-auto py-1" onclick="event.stopPropagation();">
+                          <?php
+                            $galeri_share_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(BASE_URL, '/') . '/pages/galeri.php';
+                            $galeri_share_title = $item['judul'] ?? SITE_NAME;
+                            $encUrl = rawurlencode($galeri_share_url);
+                            $encTitle = rawurlencode($galeri_share_title);
+                          ?>
+                          <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors flex items-center shrink-0" title="Bagikan ke Facebook">
+                            <iconify-icon icon="mdi:facebook" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://twitter.com/intent/tweet?text=<?php echo $encTitle; ?>&url=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-sky-400 transition-colors flex items-center shrink-0" title="Bagikan ke X/Twitter">
+                            <iconify-icon icon="mdi:twitter" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://api.whatsapp.com/send?text=<?php echo $encTitle; ?>%20<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-green-500 transition-colors flex items-center shrink-0" title="Bagikan ke WhatsApp">
+                            <iconify-icon icon="mdi:whatsapp" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-blue-700 transition-colors flex items-center shrink-0" title="Bagikan ke LinkedIn">
+                            <iconify-icon icon="mdi:linkedin" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://t.me/share/url?url=<?php echo $encUrl; ?>&text=<?php echo $encTitle; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-blue-500 transition-colors flex items-center shrink-0" title="Bagikan ke Telegram">
+                            <iconify-icon icon="mdi:telegram" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="mailto:?subject=<?php echo $encTitle; ?>&body=<?php echo $encUrl; ?>" class="hover:text-red-500 transition-colors flex items-center shrink-0" title="Bagikan lewat Email">
+                            <iconify-icon icon="mdi:email" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <button type="button" onclick="copyShareLink('<?php echo htmlspecialchars($galeri_share_url, ENT_QUOTES, 'UTF-8'); ?>', this)" class="hover:text-slate-900 transition-colors flex items-center shrink-0" title="Salin tautan">
+                            <iconify-icon icon="mdi:link-variant" class="w-8 h-8"></iconify-icon>
+                          </button>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   <?php endforeach; ?>
                 </div>
               </div>
@@ -135,10 +173,10 @@ include '../components/head.php';
                       $tanggal = isset($item['tanggal_upload']) ? new DateTime($item['tanggal_upload']) : null;
                       $formattedDate = $tanggal ? strftime('%d %B %Y', $tanggal->getTimestamp()) : '';
                     ?>
-                    <button type="button" data-galeri-index="<?php echo $item['_index']; ?>" class="group border border-brand-border/30 rounded-[28px] overflow-hidden shadow-sm bg-white hover:shadow-xl transition-shadow">
+                    <div data-galeri-index="<?php echo $item['_index']; ?>" class="border border-brand-border/30 rounded-[28px] overflow-hidden shadow-sm bg-white text-left cursor-pointer hover:shadow-xl transition-shadow">
                       <div class="relative h-56 overflow-hidden bg-[#4c3900]">
                         <?php if ($isVideoFile && !$thumbnailUrl): ?>
-                          <video controls class="w-full h-full object-cover bg-[#4c3900]">
+                          <video controls class="w-full h-full object-cover bg-[#4c3900]" onclick="event.stopPropagation();">
                             <source src="<?php echo htmlspecialchars($fileUrl); ?>" type="video/mp4">
                             Browser Anda tidak mendukung video tag.
                           </video>
@@ -156,8 +194,38 @@ include '../components/head.php';
                       <div class="px-4 pt-3 pb-4 bg-brand-bg/90">
                         <h3 class="text-base font-semibold text-brand-dark leading-tight"><?php echo htmlspecialchars($item['judul'] ?: 'Tanpa Judul'); ?></h3>
                         <p class="mt-2 text-xs uppercase tracking-[0.24em] text-brand-muted"><?php echo htmlspecialchars($formattedDate); ?></p>
+                        <!-- Share buttons row -->
+                        <div class="mt-3 flex items-center gap-2 text-brand-muted flex-nowrap overflow-x-auto py-1" onclick="event.stopPropagation();">
+                          <?php
+                            $galeri_share_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(BASE_URL, '/') . '/pages/galeri.php';
+                            $galeri_share_title = $item['judul'] ?? SITE_NAME;
+                            $encUrl = rawurlencode($galeri_share_url);
+                            $encTitle = rawurlencode($galeri_share_title);
+                          ?>
+                          <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 transition-colors flex items-center shrink-0" title="Bagikan ke Facebook">
+                            <iconify-icon icon="mdi:facebook" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://twitter.com/intent/tweet?text=<?php echo $encTitle; ?>&url=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-sky-400 transition-colors flex items-center shrink-0" title="Bagikan ke X/Twitter">
+                            <iconify-icon icon="mdi:twitter" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://api.whatsapp.com/send?text=<?php echo $encTitle; ?>%20<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-green-500 transition-colors flex items-center shrink-0" title="Bagikan ke WhatsApp">
+                            <iconify-icon icon="mdi:whatsapp" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-blue-700 transition-colors flex items-center shrink-0" title="Bagikan ke LinkedIn">
+                            <iconify-icon icon="mdi:linkedin" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="https://t.me/share/url?url=<?php echo $encUrl; ?>&text=<?php echo $encTitle; ?>" target="_blank" rel="noopener noreferrer" class="hover:text-blue-500 transition-colors flex items-center shrink-0" title="Bagikan ke Telegram">
+                            <iconify-icon icon="mdi:telegram" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <a href="mailto:?subject=<?php echo $encTitle; ?>&body=<?php echo $encUrl; ?>" class="hover:text-red-500 transition-colors flex items-center shrink-0" title="Bagikan lewat Email">
+                            <iconify-icon icon="mdi:email" class="w-8 h-8"></iconify-icon>
+                          </a>
+                          <button type="button" onclick="copyShareLink('<?php echo htmlspecialchars($galeri_share_url, ENT_QUOTES, 'UTF-8'); ?>', this)" class="hover:text-slate-900 transition-colors flex items-center shrink-0" title="Salin tautan">
+                            <iconify-icon icon="mdi:link-variant" class="w-8 h-8"></iconify-icon>
+                          </button>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   <?php endforeach; ?>
                 </div>
               </div>
@@ -334,6 +402,29 @@ include '../components/head.php';
         if (event.target === modal) closeModal();
       });
     })();
+
+    // Helper share copy link global
+    if (typeof copyShareLink === 'undefined') {
+      window.copyShareLink = function(url, btn) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="text-[10px] font-semibold text-green-600">Tersalin</span>';
+            setTimeout(function(){ btn.innerHTML = orig; }, 1500);
+          }).catch(function(){ alert('Salin tautan gagal.'); });
+        } else {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('Tautan disalin.');
+          } catch(e) { alert('Salin tautan gagal.'); }
+        }
+      }
+    }
   </script>
 
   </div> <!-- glass-content-wrapper end -->

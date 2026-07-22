@@ -1,7 +1,9 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Pendaftaran Siswa Baru — SLB-C YPSLB Gemolong";
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/ppdb');
+$title = "Pendaftaran Siswa Baru — SLB BC KARYA SEJAHTERA";
 include '../components/head.php';
 ?>
 <body class="text-brand-dark font-sans glass-body">
@@ -20,6 +22,12 @@ include '../components/head.php';
   <section id="ppdb" class="py-24">
     <div class="max-w-3xl mx-auto px-6">
       <div class="glass-section">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">PPDB</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Pendaftaran Siswa Baru</h2>
+          </div>
+        </div>
         <!-- Steps -->
         <div class="flex items-center justify-center gap-4 mb-12 fade-in-up delay-200">
           <div class="ppdb-step current flex items-center gap-2">

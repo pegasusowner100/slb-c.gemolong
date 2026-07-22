@@ -1,29 +1,71 @@
 <?php
+/**
+ * ========================================
+ * HALAMAN UTAMA (HOMEPAGE) - index.php
+ * ========================================
+ * 
+ * File ini adalah landing page/homepage sekolah SLB BC KARYA SEJAHTERA.
+ * Menampilkan:
+ * - Hero section dengan carousel
+ * - Statistik sekolah
+ * - Profil & Visi Misi
+ * - Program pendidikan
+ * - Fasilitas
+ * - Berita terbaru
+ * - Galeri foto/video
+ * - FAQ
+ * - Google Analytics & Google Tag Manager scripts (JANGAN DIHAPUS - diperlukan untuk tracking)
+ * 
+ * CATATAN PENTING:
+ * - Script Google Analytics, Google Tag Manager, dan reCAPTCHA disertakan di file ini
+ * - Jangan hapus script-script tersebut karena diperlukan untuk:
+ *   1. Tracking pengunjung website
+ *   2. Analytics data
+ *   3. Security (reCAPTCHA)
+ * - Jika halaman blank, periksa console/error log untuk debug
+ * 
+ * ========================================
+ */
+
+// ===== DEBUG MODE: Matikan di production (tampilkan error di log saja) =====
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(0);
+
+// Include file-file yang diperlukan
 require_once 'includes/db.php';
-$title = "SLB-C YPSLB Gemolong — Pendidikan Luar Biasa Berkualitas";
+require_once 'includes/session.php';
+
+// Track pengunjung (optional - jika file ada)
+if (file_exists(__DIR__ . '/includes/track-visitor.php')) {
+    require_once 'includes/track-visitor.php';
+    trackVisitor('home');
+}
+
+$title = "SLB BC KARYA SEJAHTERA";
 $page = 'home';
 
 // Default hero data
 $hero = [
-    'tagline' => 'PENERIMAAN SISWA BARU MASIH DIBUKA, SISA KUOTA 5 SISWA',
-    'judul' => 'SLB-C YPSLB Gemolong',
-    'deskripsi' => 'Membentuk generasi unggul, berkarakter, dan berprestasi melalui pendidikan berkualitas dengan lingkungan belajar yang inspiratif dan inovatif.',
-    'background_image' => 'https://picsum.photos/seed/school-hero-main/1920/1080',
-    'background_images' => 'https://picsum.photos/seed/hero1/1920/1080,https://picsum.photos/seed/hero2/1920/1080,https://picsum.photos/seed/hero3/1920/1080',
-    'cta1_text' => 'Daftar PPDB',
-    'cta1_link' => '#',
-    'cta2_text' => 'Jelajahi Sekolah',
-    'cta2_link' => '#',
-    'motto' => 'Mandiri berkarakter berdikari',
-    'tahun_berdiri' => 1990,
-    'siswa_aktif' => 1250,
-    'alumni' => 5000,
-    'tenaga_pendidik' => 85,
-    'total_prestasi' => 150,
-    'jumlah_ruangan' => 26,
-    'buku_paket' => 500,
-    'latitude' => '-7.4585',
-    'longitude' => '110.9567'
+    'tagline' => '',
+    'judul' => '',
+    'deskripsi' => '',
+    'background_image' => '',
+    'background_images' => '',
+    'cta1_text' => '',
+    'cta1_link' => '',
+    'cta2_text' => '',
+    'cta2_link' => '',
+    'motto' => '',
+    'tahun_berdiri' => '',
+    'siswa_aktif' => '',
+    'alumni' => '',
+    'tenaga_pendidik' => '',
+    'total_prestasi' => '',
+    'jumlah_ruangan' => '',
+    'buku_paket' => '',
+    'latitude' => '',
+    'longitude' => ''
 ];
 $programs = [];
 $fasilitas = [];
@@ -34,20 +76,20 @@ $galeri = [
 ]; // Grouped by jenis_galeri
 $faqs = []; // Untuk menyimpan FAQ dari database
 $profil = [
-    'nama_sekolah' => SITE_NAME,
-    'akreditasi' => 'A',
-    'sejarah' => 'SLB-C YPSLB Gemolong didirikan dengan tujuan memberikan pendidikan terbaik untuk anak berkebutuhan khusus. Berkomitmen untuk menciptakan generasi mandiri, berkarakter, dan berprestasi.',
-    'visi' => 'Menjadikan SLB-C YPSLB Gemolong sebagai lembaga pendidikan luar biasa yang unggul dalam pengembangan potensi anak berkebutuhan khusus secara optimal, berkarakter, mandiri, dan berprestasi.',
-    'misi' => 'Menyelenggarakan pendidikan yang berkualitas, mengembangkan potensi akademik dan non-akademik, serta membangun karakter, serta menjalin kerjasama dengan berbagai pihak.',
-    'profil_kepala_sekolah' => 'Kepala sekolah yang inovatif, berdedikasi, dan berpengalaman dalam dunia pendidikan khusus.',
-    'sambutan' => 'Pendidikan bukan sekadar menuntut ilmu, melainkan proses membentuk karakter, membangun mimpi, dan memberdayakan generasi yang akan membawa perubahan bagi bangsa. Di SLB-C YPSLB Gemolong, kami berkomitmen untuk menjadi rumah kedua bagi setiap siswa agar mereka tumbuh menjadi pribadi yang unggul dan berkarakter.',
-    'alamat' => 'Jl. Pendidikan No. 1, Gemolong, Kabupaten Sragen, Jawa Tengah',
-    'telepon' => '(0271) 123456',
-    'email' => 'info@slbc-gemolong.sch.id',
-    'gambar_gedung' => 'https://picsum.photos/seed/school-building-front/700/525.jpg',
-    'struktur_organisasi' => 'https://picsum.photos/seed/struktur-organisasi/1000/600.jpg',
-    'nama_kepala_sekolah' => 'Drs. Ahmad Sudrajat, M.Pd',
-    'foto_kepala_sekolah' => 'https://picsum.photos/seed/kepsek-portrait/480/600.jpg',
+    'nama_sekolah' => '',
+    'akreditasi' => '',
+    'sejarah' => '',
+    'visi' => '',
+    'misi' => '',
+    'profil_kepala_sekolah' => '',
+    'sambutan' => '',
+    'alamat' => '',
+    'telepon' => '',
+    'email' => '',
+    'gambar_gedung' => '',
+    'struktur_organisasi' => '',
+    'nama_kepala_sekolah' => '',
+    'foto_kepala_sekolah' => '',
     'instagram' => '',
     'facebook' => '',
     'youtube' => '',
@@ -89,6 +131,8 @@ $anggaran = [];
 $realisasi = [];
 $rencana = [];
 $prestasi_list = [];
+$testimonials = [];
+$anggaran_semester = [];
 
 try {
     if ($supabaseConnected) {
@@ -97,11 +141,11 @@ try {
             $hero = array_merge($hero, $heroResult['data'][0]);
         }
         if (empty($hero['latitude'])) {
-            $hero['latitude'] = '-7.4585';
-        }
-        if (empty($hero['longitude'])) {
-            $hero['longitude'] = '110.9567';
-        }
+        $hero['latitude'] = '';
+    }
+    if (empty($hero['longitude'])) {
+        $hero['longitude'] = '';
+    }
         
         // Fetch profil sekolah
         $profilResult = supabaseSelect('profil_sekolah', ['id' => 'eq.1', 'limit' => 1]);
@@ -184,32 +228,72 @@ try {
             $hero['tenaga_pendidik'] = count($guru_list);
         }
 
-        // Get anggaran
-        $anggaranResult = supabaseSelect('anggaran_bosn', ['order' => 'tahun.desc']);
-        if ($anggaranResult['success']) {
-            $anggaran = $anggaranResult['data'];
-        }
-
-        // Get realisasi
-        $realisasiResult = supabaseSelect('realisasi_bulanan', ['order' => 'tahun.desc']);
-        if ($realisasiResult['success']) {
-            $realisasi = $realisasiResult['data'];
+        // Get anggaran semester & aggregate
+        $anggaran_semester = [];
+        $anggaran = [];
+        $realisasi = [];
+        $semResult = supabaseSelect('anggaran_semester', ['order' => 'tahun.desc,semester.asc']);
+        if ($semResult['success']) {
+            $anggaran_semester = $semResult['data'];
             
-            // Function to get month number from name
-            function getMonthNumber($monthName) {
-                $months = [
-                    'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4, 'Mei' => 5, 'Juni' => 6,
-                    'Juli' => 7, 'Agustus' => 8, 'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
-                ];
-                return $months[$monthName] ?? 0;
-            }
-            
-            // Sort realisasi by year and month number
-            usort($realisasi, function($a, $b) {
-                if ($a['tahun'] != $b['tahun']) {
-                    return $b['tahun'] - $a['tahun'];
+            // Ambil data realisasi bulanan langsung dari tabel realisasi_bulanan
+            $realResult = supabaseSelect('realisasi_bulanan', ['order' => 'tahun.desc']);
+            if ($realResult['success']) {
+                $realisasi = $realResult['data'];
+                
+                if (!function_exists('getMonthNumber')) {
+                    function getMonthNumber($monthName) {
+                        $months = [
+                            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4, 'Mei' => 5, 'Juni' => 6,
+                            'Juli' => 7, 'Agustus' => 8, 'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+                        ];
+                        return $months[$monthName] ?? 0;
+                    }
                 }
-                return getMonthNumber($a['bulan']) - getMonthNumber($b['bulan']);
+                
+                usort($realisasi, function($a, $b) {
+                    if (($a['tahun'] ?? 0) != ($b['tahun'] ?? 0)) {
+                        return ($b['tahun'] ?? 0) - ($a['tahun'] ?? 0);
+                    }
+                    return getMonthNumber($a['bulan'] ?? '') - getMonthNumber($b['bulan'] ?? '');
+                });
+            }
+
+            // Hitung realisasi semester secara dinamis dari jumlah realisasi bulanan pada semester tersebut
+            foreach ($anggaran_semester as &$as) {
+                $sem_months = ($as['semester'] == 1) 
+                    ? ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni']
+                    : ['Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $sum_real = 0;
+                foreach ($realisasi as $r) {
+                    if ($r['tahun'] == $as['tahun'] && in_array($r['bulan'], $sem_months)) {
+                        $sum_real += (float)($r['realisasi'] ?? 0);
+                    }
+                }
+                $as['total_realisasi'] = $sum_real;
+            }
+            unset($as);
+
+            // Agregasikan anggaran tahunan dari anggaran_semester (tanpa upload file)
+            $yearly = [];
+            foreach ($anggaran_semester as $as) {
+                $tahun = $as['tahun'];
+                if (!isset($yearly[$tahun])) {
+                    $yearly[$tahun] = [
+                        'tahun' => $tahun,
+                        'total_anggaran' => 0,
+                        'realisasi' => 0,
+                        'file_pdf' => ''
+                    ];
+                }
+                $yearly[$tahun]['total_anggaran'] += $as['total_anggaran'];
+                $yearly[$tahun]['realisasi'] += ($as['total_realisasi'] ?? 0);
+            }
+            $anggaran = array_values($yearly);
+            
+            // Urutkan tahun desc
+            usort($anggaran, function($a, $b) {
+                return $b['tahun'] - $a['tahun'];
             });
         }
 
@@ -225,6 +309,17 @@ try {
             $prestasi_list = $prestasiResult['data'];
             $hero['total_prestasi'] = count($prestasi_list);
         }
+
+        // Get published testimonials
+        $testimonialResult = supabaseSelect('testimoni', ['order' => 'urutan.asc, created_at.desc']);
+        if ($testimonialResult['success']) {
+            // Only show published testimonials
+            foreach ($testimonialResult['data'] as $item) {
+                if (($item['status'] ?? 'published') === 'published') {
+                    $testimonials[] = $item;
+                }
+            }
+        }
     }
 } catch (Exception $e) {}
 
@@ -237,7 +332,7 @@ include 'components/head.php';
 
   <!-- HERO -->
   <?php if (!empty($homepageSections['hero'])): ?>
-  <section class="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
+  <section class="relative h-screen min-h-[600px] flex items-end justify-center pb-24 overflow-hidden">
     <?php
     // Parse background images
     $bg_images = [];
@@ -245,8 +340,7 @@ include 'components/head.php';
         $bg_images = array_filter(array_map('trim', explode(',', $hero['background_images'])));
     }
     if (empty($bg_images)) {
-        $bg_images = [
-            'https://picsum.photos/seed/school-hero-main/1920/1080'];
+        $bg_images = [];
     }
     ?>
     <div class="absolute inset-0 z-0">
@@ -287,7 +381,7 @@ include 'components/head.php';
                data-slide="<?php echo $index; ?>">
         <?php endforeach; ?>
       <?php endif; ?>
-      <div class="absolute inset-0 bg-brand-dark/60"></div>
+      <div class="absolute inset-0 bg-brand-dark/10"></div>
     </div>
     
     <!-- Navigation -->
@@ -307,9 +401,9 @@ include 'components/head.php';
     </div>
     <?php endif; ?>
     
-    <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
+    <div class="relative z-10 max-w-4xl mx-auto px-6 text-center mb-6">
       <h1 class="font-bold text-4xl md:text-4xl lg:text-5xl tracking-tight mb-6 leading-[1.1]">
-        <span class="hero-sweep-text px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg"><?php echo htmlspecialchars($hero['judul'] ?? 'SLB-C YPSLB Gemolong'); ?></span>
+        <span class="hero-sweep-text px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg"><?php echo htmlspecialchars($hero['judul'] ?? 'SLB BC KARYA SEJAHTERA'); ?></span>
       </h1>
       <p class="text-white/80 text-lg md:text-xl max-w-2xl mx-auto mb-6"><?php echo htmlspecialchars($hero['deskripsi'] ?? ''); ?></p>
       <span class="inline-block text-sm md:text-base lg:text-lg font-bold tracking-[0.2em] uppercase text-white mb-10 px-6 py-3 rounded animate-pulse bg-brand-accent shadow-[0_0_15px_rgba(62,107,78,0.8)]"><?php echo htmlspecialchars($hero['tagline'] ?? ''); ?></span>
@@ -430,26 +524,93 @@ include 'components/head.php';
   <?php if (!empty($homepageSections['running_text'])): ?>
   <section class="bg-blue-600 py-4 overflow-hidden">
     <div class="flex animate-marquee" style="width: 200%;">
-      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Selamat Datang di <?php echo htmlspecialchars($hero['judul'] ?? 'SLB-C YPSLB Gemolong'); ?></span>
+      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Selamat Datang di <?php echo htmlspecialchars($hero['judul'] ?? 'SLB BC KARYA SEJAHTERA'); ?></span>
       <span class="text-white font-bold text-lg mx-8 flex-shrink-0">•••</span>
-      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Visi: <?php echo htmlspecialchars($profil['visi'] ?? 'Menjadikan SLB-C YPSLB Gemolong sebagai lembaga pendidikan luar biasa yang unggul dalam pengembangan potensi anak berkebutuhan khusus secara optimal, berkarakter, mandiri, dan berprestasi'); ?></span>
+      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Visi: <?php echo htmlspecialchars($profil['visi'] ?? 'Menjadikan SLB BC KARYA SEJAHTERA sebagai lembaga pendidikan luar biasa yang unggul dalam pengembangan potensi anak berkebutuhan khusus secara optimal, berkarakter, mandiri, dan berprestasi'); ?></span>
       <span class="text-white font-bold text-lg mx-8 flex-shrink-0">•••</span>
       <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Misi: <?php echo htmlspecialchars($profil['misi'] ?? 'Menyelenggarakan pendidikan yang berkualitas, mengembangkan potensi akademik dan non-akademik, serta membangun karakter, serta menjalin kerjasama dengan berbagai pihak'); ?></span>
       <span class="text-white font-bold text-lg mx-8 flex-shrink-0">•••</span>
       <!-- Duplicate for seamless loop -->
-      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Selamat Datang di <?php echo htmlspecialchars($hero['judul'] ?? 'SLB-C YPSLB Gemolong'); ?></span>
+      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Selamat Datang di <?php echo htmlspecialchars($hero['judul'] ?? 'SLB BC KARYA SEJAHTERA'); ?></span>
       <span class="text-white font-bold text-lg mx-8 flex-shrink-0">•••</span>
-      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Visi: <?php echo htmlspecialchars($profil['visi'] ?? 'Menjadikan SLB-C YPSLB Gemolong sebagai lembaga pendidikan luar biasa yang unggul dalam pengembangan potensi anak berkebutuhan khusus secara optimal, berkarakter, mandiri, dan berprestasi'); ?></span>
+      <span class="text-white font-bold text-lg mx-8 flex-shrink-0">Visi: <?php echo htmlspecialchars($profil['visi'] ?? 'Menjadikan SLB BC KARYA SEJAHTERA sebagai lembaga pendidikan luar biasa yang unggul dalam pengembangan potensi anak berkebutuhan khusus secara optimal, berkarakter, mandiri, dan berprestasi'); ?></span>
     </div>
   </section>
   
   <?php endif; ?>
 
-  <!-- STATS BAR removed per request -->
+  <!-- STATS BAR -->
+  <section class="bg-[#f97316] py-6 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 relative z-10">
+      <div class="text-center border-r-4 border-[#fef3c7] pr-8">
+        <div class="font-serif text-4xl md:text-5xl font-bold mb-2 counter" style="color: #fef3c7 !important;" data-target="<?php echo $hero['siswa_aktif'] ?? 1250; ?>">0</div>
+        <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-[#fef3c7]">Siswa Aktif</div>
+      </div>
+      <div class="text-center border-r-4 border-[#fef3c7] pr-8">
+        <div class="font-serif text-4xl md:text-5xl font-bold mb-2 counter" style="color: #fef3c7 !important;" data-target="<?php echo $hero['tenaga_pendidik'] ?? 85; ?>">0</div>
+        <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-[#fef3c7]">Tenaga Pendidik</div>
+      </div>
+      <div class="text-center border-r-4 border-[#fef3c7] pr-8">
+        <div class="font-serif text-4xl md:text-5xl font-bold mb-2 counter" style="color: #fef3c7 !important;" data-target="<?php echo $hero['total_prestasi'] ?? 150; ?>">0</div>
+        <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-[#fef3c7]">Prestasi</div>
+      </div>
+      <div class="text-center border-r-4 border-[#fef3c7] pr-8">
+        <div class="flex items-center justify-center gap-0 mb-2">
+          <div class="font-serif text-4xl md:text-5xl font-bold counter" style="color: #fef3c7 !important;" data-target="<?php echo $hero['alumni'] ?? 5000; ?>">0</div>
+          <span class="font-serif text-4xl md:text-5xl font-bold" style="color: white !important;">+</span>
+        </div>
+        <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-[#fef3c7]">Alumni</div>
+      </div>
+      <div class="text-center">
+        <div class="font-serif text-4xl md:text-5xl font-bold mb-2 counter" style="color: #fef3c7 !important;" data-target="<?php echo $hero['tahun_berdiri'] ?? 1990; ?>">0</div>
+        <div class="text-[10px] font-bold tracking-[0.2em] uppercase text-[#fef3c7]">Tahun Berdiri</div>
+      </div>
+    </div>
+  </section>
 
   <!-- PROFIL SEKOLAH -->
   <?php if (!empty($homepageSections['profil'])): ?>
   <section id="profil" class="py-12">
+    <style>
+      .shadow-brand-glow {
+        box-shadow: 0 25px 50px -12px rgba(62, 107, 78, 0.45); /* 3E6B4E in RGBA */
+      }
+      @keyframes wobble-box-left {
+        0%, 100% { transform: rotate(-6deg) translate(0, 0); }
+        50% { transform: rotate(-10deg) translate(-6px, -6px); }
+      }
+      @keyframes wobble-box-right {
+        0%, 100% { transform: rotate(6deg) translate(0, 0); }
+        50% { transform: rotate(10deg) translate(6px, 6px); }
+      }
+      .animate-wobble-left {
+        animation: wobble-box-left 6s ease-in-out infinite;
+      }
+      .animate-wobble-right {
+        animation: wobble-box-right 6s ease-in-out infinite;
+      }
+      .film-frame {
+        position: relative;
+        background: #1a1a1a;
+        padding: 36px 12px;
+        border-radius: 8px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+      .film-frame::before, .film-frame::after {
+        content: '';
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        height: 10px;
+        background-image: repeating-linear-gradient(to right, #ffffff 0px, #ffffff 10px, transparent 10px, transparent 20px);
+      }
+      .film-frame::before {
+        top: 12px;
+      }
+      .film-frame::after {
+        bottom: 12px;
+      }
+    </style>
     <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-8">
         <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
@@ -466,26 +627,28 @@ include 'components/head.php';
               <?php echo getVideoEmbed($profil['video_profil'], '100%', '100%'); ?>
             </div>
           <?php else: ?>
-            <img src="<?php echo htmlspecialchars($profil['gambar_gedung'] ?? 'https://picsum.photos/seed/school-building/480/600.jpg'); ?>" alt="Gedung Sekolah" class="w-full h-[450px] object-cover rounded-lg shadow-lg">
+            <div class="film-frame relative z-10 shadow-brand-glow">
+              <img src="<?php echo htmlspecialchars($profil['gambar_gedung'] ?? 'https://picsum.photos/seed/school-building/480/600.jpg'); ?>" alt="Gedung Sekolah" class="w-full h-[378px] object-cover rounded-md">
+            </div>
           <?php endif; ?>
-            <div class="absolute -bottom-4 -right-4 w-24 h-24 border-2 border-brand-accent rounded-lg"></div>
-            <div class="absolute -top-4 -left-4 w-24 h-24 border-2 border-brand-accent/30 rounded-lg"></div>
+            <div class="absolute -bottom-4 -right-4 w-24 h-24 border-4 border-brand-accent rounded-lg rotate-6 animate-wobble-right z-20 pointer-events-none bg-white/30 backdrop-blur-[3px]"></div>
+            <div class="absolute -top-4 -left-4 w-24 h-24 border-4 border-brand-accent rounded-lg -rotate-6 animate-wobble-left z-20 pointer-events-none bg-white/30 backdrop-blur-[3px]"></div>
           </div>
         </div>
         <div class="lg:col-span-3">
           <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-brand-accent px-4 py-2 rounded">Sambutan Kepala Sekolah</span>
-          <h2 class="font-serif text-4xl md:text-5xl font-normal tracking-tight mt-4 mb-6 leading-[1.1]">Selamat Datang di <em><?php echo htmlspecialchars($profil['nama_sekolah'] ?? 'SLB-C YPSLB Gemolong'); ?></em></h2>
+          <h2 class="font-serif text-4xl md:text-5xl font-normal tracking-tight mt-4 mb-6 leading-[1.1]">Selamat Datang di <em><?php echo htmlspecialchars($profil['nama_sekolah'] ?? 'SLB BC KARYA SEJAHTERA'); ?></em></h2>
           <div class="relative pl-6 border-l-2 border-brand-accent mb-6">
             <iconify-icon icon="lucide:quote" class="text-brand-accent/30 text-4xl absolute -left-5 -top-2 bg-brand-bg px-1"></iconify-icon>
-            <p class="text-brand-muted text-sm font-light leading-relaxed italic text-justify">
+            <p class="text-slate-900 text-sm font-normal leading-relaxed text-justify">
               "<?php echo nl2br(htmlspecialchars($profil['sambutan'] ?? 'Pendidikan bukan sekadar menuntut ilmu, melainkan proses membentuk karakter, membangun mimpi, dan mempersiapkan generasi yang akan membawa perubahan bagi bangsa.')); ?>"
             </p>
           </div>
           <div class="flex items-center gap-4">
-            <img src="<?php echo htmlspecialchars($profil['foto_kepala_sekolah'] ?? 'https://picsum.photos/seed/kepsek/100/100.jpg'); ?>" alt="Kepala Sekolah" class="w-16 h-16 rounded-full object-cover border-2 border-brand-accent/30">
+            <img src="<?php echo htmlspecialchars($profil['foto_kepala_sekolah'] ?? 'https://picsum.photos/seed/kepsek/100/100.jpg'); ?>" alt="Kepala Sekolah" class="w-24 h-24 rounded-full object-cover border-2 border-brand-accent/30">
             <div>
-              <h4 class="font-serif text-lg font-semibold"><?php echo htmlspecialchars($profil['nama_kepala_sekolah'] ?? 'Drs. Ahmad Sudrajat, M.Pd'); ?></h4>
-              <p class="text-xs text-brand-muted">Kepala Sekolah <?php echo htmlspecialchars($profil['nama_sekolah'] ?? 'SLB-C YPSLB Gemolong'); ?></p>
+              <h4 class="font-serif text-2xl font-semibold"><?php echo htmlspecialchars($profil['nama_kepala_sekolah'] ?? 'Drs. Ahmad Sudrajat, M.Pd'); ?></h4>
+              <p class="text-sm text-brand-muted">Kepala Sekolah <?php echo htmlspecialchars($profil['nama_sekolah'] ?? 'SLB BC KARYA SEJAHTERA'); ?></p>
             </div>
           </div>
         </div>
@@ -502,32 +665,41 @@ include 'components/head.php';
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         
         <!-- Kolom 1: Sejarah -->
-        <div class="bg-white p-8 rounded-2xl shadow-lg border border-brand-border/30 overflow-hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-brand-border/30 overflow-hidden min-h-[500px]">
           <div class="bg-brand-accent -mx-8 -mt-8 px-8 py-4 mb-6">
-            <h3 class="font-serif text-2xl font-semibold text-center text-white">Sejarah</h3>
+            <h3 class="font-serif text-2xl font-semibold text-center text-white">Latar Belakang</h3>
           </div>
-          <p class="text-brand-muted text-sm leading-relaxed mb-6 text-justify">
-            <?php echo nl2br(htmlspecialchars($profil['sejarah'] ?? 'SLB-C YPSLB Gemolong didirikan dengan tujuan memberikan pendidikan terbaik untuk anak berkebutuhan khusus.')); ?>
-          </p>
+          <div class="mb-6">
+            <p class="text-brand-muted text-sm leading-relaxed text-justify">
+              <?php 
+              $sejarahText = $profil['sejarah'] ?? 'SLB BC KARYA SEJAHTERA didirikan dengan tujuan memberikan pendidikan terbaik untuk anak berkebutuhan khusus.';
+              // Cari posisi kalimat "SD Negeri Karanganyar Plupuh."
+              $potongDi = strpos($sejarahText, 'SD Negeri Karanganyar Plupuh.');
+              if ($potongDi !== false) {
+                  // Ambil teks sampai kalimat tersebut selesai (ditambah panjang kalimat + 1 untuk spasi/akhir kalimat)
+                  $teksSingkat = substr($sejarahText, 0, $potongDi + strlen('SD Negeri Karanganyar Plupuh.'));
+                  echo nl2br(htmlspecialchars($teksSingkat));
+              } else {
+                  echo nl2br(htmlspecialchars($sejarahText));
+              }
+              ?>
+            </p>
+          </div>
           <div class="flex justify-center">
-            <a href="<?= BASE_URL ?>/pages/profil.php#sejarah" class="px-8 py-3 border-2 border-brand-dark text-brand-dark font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-brand-dark hover:text-white transition-colors">
+            <a href="<?= BASE_URL ?>/pages/profil.php#sejarah" class="px-8 py-3 border-2 border-brand-accent text-brand-accent font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-brand-accent hover:text-white transition-colors">
               Lihat Selengkapnya
             </a>
           </div>
         </div>
 
         <!-- Kolom 2: Dasar Hukum -->
-        <div class="bg-white p-8 rounded-2xl shadow-lg border border-brand-border/30 overflow-hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-brand-border/30 overflow-hidden min-h-[500px]">
           <div class="bg-brand-accent -mx-8 -mt-8 px-8 py-4 mb-6">
             <h3 class="font-serif text-2xl font-semibold text-center text-white">Dasar Hukum</h3>
           </div>
           <div class="text-brand-muted text-sm leading-relaxed mb-6">
             <?php 
-            $dasarHukum = $profil['dasar_hukum'] ?? '1. Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional
-2. Peraturan Pemerintah Nomor 19 Tahun 2005 tentang Pendidikan Anak Berkebutuhan Khusus
-3. Peraturan Menteri Pendidikan dan Kebudayaan Nomor 70 Tahun 2013 tentang Pendidikan Dasar
-4. Peraturan Daerah Provinsi Jawa Tengah Nomor 12 Tahun 2018 tentang Pendidikan Luar Biasa
-5. Akta Notaris Pendirian Yayasan YPSLB Gemolong';
+            $dasarHukum = $profil['dasar_hukum'] ?? '';
             $lines = explode("\n", $dasarHukum);
             foreach ($lines as $line) {
                 $trimmedLine = trim($line);
@@ -538,46 +710,48 @@ include 'components/head.php';
             ?>
           </div>
           <div class="flex justify-center">
-            <a href="<?= BASE_URL ?>/pages/profil.php#dasar-hukum" class="px-8 py-3 border-2 border-brand-dark text-brand-dark font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-brand-dark hover:text-white transition-colors">
+            <a href="<?= BASE_URL ?>/pages/profil.php#dasar-hukum" class="px-8 py-3 border-2 border-brand-accent text-brand-accent font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-brand-accent hover:text-white transition-colors">
               Lihat Selengkapnya
             </a>
           </div>
         </div>
 
         <!-- Kolom 3: Visi & Misi -->
-        <div class="bg-white p-8 rounded-2xl shadow-lg border border-brand-border/30 overflow-hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-brand-border/30 overflow-hidden min-h-[500px]">
           <div class="bg-brand-accent -mx-8 -mt-8 px-8 py-4 mb-6">
             <h3 class="font-serif text-2xl font-semibold text-center text-white">Visi Misi</h3>
           </div>
           
-          <h4 class="font-semibold text-lg text-center mb-2 text-brand-dark">Visi</h4>
-          <p class="text-brand-muted text-sm mb-6 text-justify">
-            <?php echo nl2br(htmlspecialchars($profil['visi'] ?? 'Menjadikan SLB-C YPSLB Gemolong sebagai lembaga pendidikan luar biasa yang unggul.')); ?>
-          </p>
-          
-          <div class="border-t border-brand-border/50 my-6"></div>
-          
-          <h4 class="font-semibold text-lg text-center mb-2 text-brand-dark">Misi</h4>
-          <div class="text-brand-muted text-sm mb-6 text-justify">
-            <?php 
-            $misiText = $profil['misi'] ?? 'Menyelenggarakan pendidikan yang berkualitas, mengembangkan potensi, dan membangun karakter.';
-            $lines = explode("\n", $misiText);
-            foreach ($lines as $index => $line) {
-                $trimmedLine = trim($line);
-                if (!empty($trimmedLine)) {
-                    // Check if line starts with a number (digit)
-                    if (preg_match('/^\d/', $trimmedLine)) {
-                        echo '<div class="mb-2">' . htmlspecialchars($line) . '</div>';
-                    } else {
-                        echo '<div class="mb-2" style="padding-left: 1.5rem;">' . htmlspecialchars($line) . '</div>';
-                    }
-                }
-            }
-            ?>
+          <div>
+            <h4 class="font-semibold text-lg text-center mb-2 text-brand-dark">Visi</h4>
+            <p class="text-brand-muted text-sm mb-6 text-justify">
+              <?php echo nl2br(htmlspecialchars($profil['visi'] ?? 'Menjadikan SLB BC KARYA SEJAHTERA sebagai lembaga pendidikan luar biasa yang unggul.')); ?>
+            </p>
+            
+            <div class="border-t border-brand-border/50 my-6"></div>
+            
+            <h4 class="font-semibold text-lg text-center mb-2 text-brand-dark">Misi</h4>
+            <div class="text-brand-muted text-sm mb-6 text-justify">
+              <?php 
+              $misiText = $profil['misi'] ?? 'Menyelenggarakan pendidikan yang berkualitas, mengembangkan potensi, dan membangun karakter.';
+              $lines = explode("\n", $misiText);
+              foreach ($lines as $index => $line) {
+                  $trimmedLine = trim($line);
+                  if (!empty($trimmedLine)) {
+                      // Check if line starts with a number (digit)
+                      if (preg_match('/^\d/', $trimmedLine)) {
+                          echo '<div class="mb-2">' . htmlspecialchars($line) . '</div>';
+                      } else {
+                          echo '<div class="mb-2" style="padding-left: 1.5rem;">' . htmlspecialchars($line) . '</div>';
+                      }
+                  }
+              }
+              ?>
+            </div>
           </div>
           
           <div class="flex justify-center">
-            <a href="<?= BASE_URL ?>/pages/profil.php#visimisi" class="px-8 py-3 border-2 border-brand-dark text-brand-dark font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-brand-dark hover:text-white transition-colors">
+            <a href="<?= BASE_URL ?>/pages/profil.php#visimisi" class="px-8 py-3 border-2 border-brand-accent text-brand-accent font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-brand-accent hover:text-white transition-colors">
               Lihat Selengkapnya
             </a>
           </div>
@@ -620,71 +794,61 @@ include 'components/head.php';
         </div>
         <div class="w-20 h-1 bg-gradient-to-r from-amber-500 to-orange-600 mx-auto"></div>
         <p class="mt-4 max-w-2xl mx-auto text-sm text-brand-muted">
-          Lihat informasi SDM sesuai database guru.
-          <a href="pages/profil.php#sumberdaya" class="font-semibold text-brand-accent hover:text-brand-dark">Kunjungi halaman Profil SDM</a>.
+         
+          <a href="<?= BASE_URL ?>/pages/profil.php#sumberdaya" class="font-semibold text-brand-accent hover:text-brand-dark"></a>.
         </p>
       </div>
 
-      <?php
-        // Build a single set of slide HTML and duplicate it for smooth looping.
-        ob_start();
-        if (!empty($guru_list)) {
-            foreach ($guru_list as $index => $guru) {
-    ?>
-              <a href="pages/profil.php#sumberdaya" class="group min-w-[280px] max-w-[280px] flex-shrink-0 overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-                <div class="h-64 overflow-hidden bg-gray-100">
-                  <img src="<?= htmlspecialchars($guru['foto'] ?? 'https://picsum.photos/seed/guru'.($index + 1).'/520/380') ?>" alt="<?= htmlspecialchars($guru['nama'] ?? 'SDM') ?>" class="h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" />
-                </div>
-                <div class="p-5">
-                  <p class="text-xs uppercase tracking-[0.24em] text-brand-label mb-2"><?= htmlspecialchars($guru['jabatan'] ?? 'Tenaga Pendidik') ?></p>
-                  <h3 class="font-serif text-xl text-brand-dark"><?= htmlspecialchars($guru['nama'] ?? 'Nama SDM') ?></h3>
-                  <?php if (!empty($guru['mapel'])): ?>
-                    <p class="text-xs text-brand-muted mt-2">Mapel: <?= htmlspecialchars($guru['mapel']) ?></p>
-                  <?php endif; ?>
-                </div>
-              </a>
-    <?php
-            }
-        } else {
-            // Fallback default slides
-            $defaults = [
-                ['nama' => 'Guru', 'jabatan' => 'Tenaga Pendidik', 'foto' => 'https://picsum.photos/seed/sdm1/520/380'],
-                ['nama' => 'Tendik', 'jabatan' => 'Tenaga Kependidikan', 'foto' => 'https://picsum.photos/seed/sdm2/520/380'],
-                ['nama' => 'Administrasi', 'jabatan' => 'Staf Sekolah', 'foto' => 'https://picsum.photos/seed/sdm3/520/380'],
-                ['nama' => 'Kepala Sekolah', 'jabatan' => 'Manajemen', 'foto' => 'https://picsum.photos/seed/sdm4/520/380'],
-            ];
-            foreach ($defaults as $index => $g) {
-    ?>
-              <a href="pages/profil.php#sumberdaya" class="group min-w-[280px] max-w-[280px] flex-shrink-0 overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-                <div class="h-64 overflow-hidden bg-gray-100">
-                  <img src="<?= htmlspecialchars($g['foto']) ?>" alt="<?= htmlspecialchars($g['nama']) ?>" class="h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" />
-                </div>
-                <div class="p-5">
-                  <p class="text-xs uppercase tracking-[0.24em] text-brand-label mb-2"><?= htmlspecialchars($g['jabatan']) ?></p>
-                  <h3 class="font-serif text-xl text-brand-dark"><?= htmlspecialchars($g['nama']) ?></h3>
-                </div>
-              </a>
-    <?php
-            }
-        }
-        $singleSlidesHtml = ob_get_clean();
-      ?>
-
-      <div class="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-lg">
-        <div class="marquee-track" aria-hidden="false">
-          <?= $singleSlidesHtml . $singleSlidesHtml ?>
+      <div class="overflow-hidden">
+        <div class="marquee-track flex flex-nowrap gap-6 min-w-max">
+          <?php
+          // Duplicate the list for seamless loop
+          $sdm_list = !empty($guru_list) ? $guru_list : [
+              ['nama' => 'Guru', 'jabatan' => 'Tenaga Pendidik', 'foto' => 'https://picsum.photos/seed/sdm1/520/380'],
+              ['nama' => 'Tendik', 'jabatan' => 'Tenaga Kependidikan', 'foto' => 'https://picsum.photos/seed/sdm2/520/380'],
+              ['nama' => 'Administrasi', 'jabatan' => 'Staf Sekolah', 'foto' => 'https://picsum.photos/seed/sdm3/520/380'],
+              ['nama' => 'Kepala Sekolah', 'jabatan' => 'Manajemen', 'foto' => 'https://picsum.photos/seed/sdm4/520/380'],
+          ];
+          // Loop twice
+          for ($loop = 0; $loop < 2; $loop++) {
+              foreach ($sdm_list as $index => $guru) {
+          ?>
+                <a href="<?= BASE_URL ?>/pages/profil.php#sumberdaya" class="flex-shrink-0 w-64 group overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  <div class="h-64 overflow-hidden bg-gray-100">
+                    <img src="<?= htmlspecialchars($guru['foto'] ?? 'https://picsum.photos/seed/guru'.($index + 1).'/520/380') ?>" alt="<?= htmlspecialchars($guru['nama'] ?? 'SDM') ?>" class="h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" />
+                  </div>
+                  <div class="p-5">
+                    <p class="text-xs uppercase tracking-[0.24em] text-brand-label mb-2"><?= htmlspecialchars($guru['jabatan'] ?? 'Tenaga Pendidik') ?></p>
+                    <h3 class="font-serif text-xl text-brand-dark"><?= htmlspecialchars($guru['nama'] ?? 'Nama SDM') ?></h3>
+                    <?php if (!empty($guru['mapel'])): ?>
+                      <p class="text-xs text-brand-muted mt-2">Mapel: <?= htmlspecialchars($guru['mapel']) ?></p>
+                    <?php endif; ?>
+                  </div>
+                </a>
+          <?php
+              }
+          }
+          ?>
         </div>
       </div>
 
       <style>
-        .marquee-track { display:flex; flex-wrap:nowrap; gap:24px; padding:24px; align-items:stretch; }
-        .marquee-track a { flex: 0 0 280px; }
+        .marquee-track {
+          display: flex;
+          flex-wrap: nowrap;
+          gap: 24px;
+          padding: 24px;
+          align-items: stretch;
+          animation: marquee 30s linear infinite;
+          will-change: transform;
+        }
+        .marquee-track:hover {
+          animation-play-state: paused;
+        }
         @keyframes marquee {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
-        .marquee-track { animation: marquee 20s linear infinite; will-change: transform; }
-        .marquee-track:hover { animation-play-state: paused; }
       </style>
     </div>
   </section>
@@ -706,19 +870,49 @@ include 'components/head.php';
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-12">
         <?php 
         $default_programs = [
-          ['nama' => 'Pendidikan Akademik'],
-          ['nama' => 'Keterampilan Vokasi'],
-          ['nama' => 'Olahraga & Seni'],
-          ['nama' => 'Bimbingan Konseling'],
-          ['nama' => 'Ekstrakurikuler'],
-          ['nama' => 'Pengembangan Karakter']
+          [
+            'nama' => 'Pendidikan Akademik',
+            'gambar' => 'https://picsum.photos/seed/akademik/600/400',
+            'deskripsi' => 'Pendidikan akademik yang disesuaikan dengan kebutuhan dan kemampuan masing-masing siswa berkebutuhan khusus untuk mengoptimalkan potensi intelektual mereka.'
+          ],
+          [
+            'nama' => 'Keterampilan Vokasi',
+            'gambar' => 'https://picsum.photos/seed/vokasi/600/400',
+            'deskripsi' => 'Pelatihan keterampilan vokasi untuk membekali siswa dengan keahlian praktis seperti tata boga, kerajinan tangan, dan kemandirian kerja agar mandiri di masa depan.'
+          ],
+          [
+            'nama' => 'Olahraga & Seni',
+            'gambar' => 'https://picsum.photos/seed/olahraga/600/400',
+            'deskripsi' => 'Pengembangan bakat di bidang olahraga dan seni untuk menyalurkan kreativitas, menjaga kebugaran fisik, serta melatih kepercayaan diri siswa.'
+          ],
+          [
+            'nama' => 'Bimbingan Konseling',
+            'gambar' => 'https://picsum.photos/seed/konseling/600/400',
+            'deskripsi' => 'Layanan bimbingan dan konseling khusus untuk mendukung perkembangan psikologis, sosial emosional, serta penyesuaian diri siswa.'
+          ],
+          [
+            'nama' => 'Ekstrakurikuler',
+            'gambar' => 'https://picsum.photos/seed/ekstrakurikuler/600/400',
+            'deskripsi' => 'Berbagai kegiatan ekstrakurikuler menarik untuk memperluas wawasan, minat bakat, dan interaksi sosial positif antar siswa.'
+          ],
+          [
+            'nama' => 'Pengembangan Karakter',
+            'gambar' => 'https://picsum.photos/seed/karakter/600/400',
+            'deskripsi' => 'Pembentukan karakter mandiri yang berakhlak mulia, disiplin, toleran, dan memiliki rasa percaya diri yang tinggi dalam kehidupan sehari-hari.'
+          ]
         ];
         $total_programs = empty($programs) ? count($default_programs) : count($programs);
         
         if (empty($programs)):
           foreach ($default_programs as $index => $prog):
             $delay = $index * 0.16; ?>
-            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm" style="animation-delay: <?= $delay ?>s;">
+            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm cursor-pointer" 
+                 onclick="openDetailCardModal(this)"
+                 data-category="Program Unggulan"
+                 data-nama="<?php echo htmlspecialchars($prog['nama']); ?>"
+                 data-gambar="<?php echo htmlspecialchars($prog['gambar']); ?>"
+                 data-deskripsi="<?php echo htmlspecialchars($prog['deskripsi']); ?>"
+                 style="animation-delay: <?= $delay ?>s;">
               <iconify-icon icon="mdi:book-open-page-variant" class="w-6 h-6 mx-auto mb-3 text-amber-500" style="font-size: 40px;"></iconify-icon>
               <h3 class="font-bold text-brand-dark text-xs md:text-sm"><?php echo htmlspecialchars($prog['nama']); ?></h3>
             </div>
@@ -726,7 +920,13 @@ include 'components/head.php';
         else:
           foreach ($programs as $index => $prog):
             $delay = $index * 0.16; ?>
-            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm" style="animation-delay: <?= $delay ?>s;">
+            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm cursor-pointer" 
+                 onclick="openDetailCardModal(this)"
+                 data-category="Program Unggulan"
+                 data-nama="<?php echo htmlspecialchars($prog['nama'] ?? ''); ?>"
+                 data-gambar="<?php echo htmlspecialchars($prog['gambar'] ?? 'https://picsum.photos/seed/program-default/600/400'); ?>"
+                 data-deskripsi="<?php echo htmlspecialchars($prog['deskripsi'] ?? 'Program unggulan di SLB BC Karya Sejahtera Gemolong.'); ?>"
+                 style="animation-delay: <?= $delay ?>s;">
               <iconify-icon icon="mdi:book-open-page-variant" class="w-6 h-6 mx-auto mb-3 text-amber-500" style="font-size: 40px;"></iconify-icon>
               <h3 class="font-bold text-brand-dark text-xs md:text-sm"><?php echo htmlspecialchars($prog['nama'] ?? ''); ?></h3>
             </div>
@@ -735,8 +935,8 @@ include 'components/head.php';
       </div>
 
       <div class="text-center">
-        <a href="pages/program.php" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm uppercase tracking-widest rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl">
-          Lihat Detail Program
+        <a href="<?= BASE_URL ?>/pages/program.php" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-sm uppercase tracking-widest rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl">
+          Lihat Selengkapnya
         </a>
       </div>
     </div>
@@ -759,28 +959,70 @@ include 'components/head.php';
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-12">
         <?php 
         $default_fasilitas = [
-          ['nama' => 'Ruang Kelas'],
-          ['nama' => 'Ruang Kepala Sekolah'],
-          ['nama' => 'Ruang Guru'],
-          ['nama' => 'Perpustakaan'],
-          ['nama' => 'Laboratorium'],
-          ['nama' => 'Fasilitas Lainnya']
+          [
+            'nama' => 'Ruang Kelas',
+            'icon' => 'lucide:home',
+            'gambar' => 'https://picsum.photos/seed/kelas/600/400',
+            'deskripsi' => 'Ruang kelas yang nyaman, bersih, terang, dan dilengkapi dengan alat peraga khusus serta media pembelajaran adaptif untuk mendukung proses belajar mengajar anak berkebutuhan khusus.'
+          ],
+          [
+            'nama' => 'Ruang Kepala Sekolah',
+            'icon' => 'lucide:graduation-cap',
+            'gambar' => 'https://picsum.photos/seed/kepsek/600/400',
+            'deskripsi' => 'Ruang kerja pimpinan sekolah yang berfungsi sebagai pusat administrasi, koordinasi program sekolah, dan ruang pelayanan bagi wali murid serta tamu dinas.'
+          ],
+          [
+            'nama' => 'Ruang Guru',
+            'icon' => 'lucide:users',
+            'gambar' => 'https://picsum.photos/seed/guru/600/400',
+            'deskripsi' => 'Ruangan khusus guru untuk berdiskusi, merancang rencana pembelajaran individual (RPI), serta beristirahat di sela-sela waktu membimbing siswa.'
+          ],
+          [
+            'nama' => 'Perpustakaan',
+            'icon' => 'lucide:book-open',
+            'gambar' => 'https://picsum.photos/seed/perpustakaan/600/400',
+            'deskripsi' => 'Koleksi buku-buku bacaan ramah anak, buku pelajaran adaptif, serta berbagai media pembelajaran audio-visual untuk menumbuhkan minat literasi siswa.'
+          ],
+          [
+            'nama' => 'Laboratorium',
+            'icon' => 'lucide:cpu',
+            'gambar' => 'https://picsum.photos/seed/laboratorium/600/400',
+            'deskripsi' => 'Fasilitas komputer dan teknologi informasi untuk mengenalkan literasi digital kepada siswa sejak dini guna membekali mereka keterampilan praktis modern.'
+          ],
+          [
+            'nama' => 'Fasilitas Lainnya',
+            'icon' => 'lucide:star',
+            'gambar' => 'https://picsum.photos/seed/lainnya/600/400',
+            'deskripsi' => 'Sarana pendukung lainnya seperti area bermain luar ruangan yang aman, lapangan olahraga serbaguna, dan ruang UKS untuk menjaga kesehatan siswa.'
+          ]
         ];
         $total_fasilitas = empty($fasilitas) ? count($default_fasilitas) : count($fasilitas);
         
         if (empty($fasilitas)):
           foreach ($default_fasilitas as $index => $f):
             $delay = $index * 0.16; ?>
-            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm" style="animation-delay: <?= $delay ?>s;">
-              <iconify-icon icon="mdi:office-building" class="w-6 h-6 mx-auto mb-3 text-teal-700" style="font-size: 40px;"></iconify-icon>
+            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm cursor-pointer"
+                 onclick="openDetailCardModal(this)"
+                 data-category="Fasilitas"
+                 data-nama="<?php echo htmlspecialchars($f['nama']); ?>"
+                 data-gambar="<?php echo htmlspecialchars($f['gambar']); ?>"
+                 data-deskripsi="<?php echo htmlspecialchars($f['deskripsi']); ?>"
+                 style="animation-delay: <?= $delay ?>s;">
+              <iconify-icon icon="<?php echo htmlspecialchars($f['icon']); ?>" class="w-6 h-6 mx-auto mb-3 text-teal-700" style="font-size: 40px;"></iconify-icon>
               <h3 class="font-bold text-brand-dark text-xs md:text-sm"><?php echo htmlspecialchars($f['nama']); ?></h3>
             </div>
           <?php endforeach;
         else:
           foreach ($fasilitas as $index => $f):
             $delay = $index * 0.16; ?>
-            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm" style="animation-delay: <?= $delay ?>s;">
-              <iconify-icon icon="mdi:office-building" class="w-6 h-6 mx-auto mb-3 text-teal-700" style="font-size: 40px;"></iconify-icon>
+            <div class="reveal-card flex flex-col items-center text-center group p-3 rounded-lg border bg-white border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-sm cursor-pointer"
+                 onclick="openDetailCardModal(this)"
+                 data-category="Fasilitas"
+                 data-nama="<?php echo htmlspecialchars($f['nama'] ?? ''); ?>"
+                 data-gambar="<?php echo htmlspecialchars($f['gambar'] ?? 'https://picsum.photos/seed/' . urlencode($f['nama'] ?? 'default-fasilitas') . '/500/400.jpg'); ?>"
+                 data-deskripsi="<?php echo htmlspecialchars($f['deskripsi'] ?? 'Fasilitas penunjang pembelajaran di sekolah.'); ?>"
+                 style="animation-delay: <?= $delay ?>s;">
+              <iconify-icon icon="<?php echo htmlspecialchars($f['icon'] ?? 'mdi:office-building'); ?>" class="w-6 h-6 mx-auto mb-3 text-teal-700" style="font-size: 40px;"></iconify-icon>
               <h3 class="font-bold text-brand-dark text-xs md:text-sm"><?php echo htmlspecialchars($f['nama'] ?? ''); ?></h3>
             </div>
           <?php endforeach;
@@ -788,8 +1030,8 @@ include 'components/head.php';
       </div>
       
       <div class="text-center">
-        <a href="pages/fasilitas.php" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-teal-600 to-teal-800 text-white font-bold text-sm uppercase tracking-widest rounded-lg hover:from-teal-700 hover:to-teal-900 transition-all shadow-lg hover:shadow-xl">
-          Lihat Detail Fasilitas
+        <a href="<?= BASE_URL ?>/pages/fasilitas.php" class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-teal-600 to-teal-800 text-white font-bold text-sm uppercase tracking-widest rounded-lg hover:from-teal-700 hover:to-teal-900 transition-all shadow-lg hover:shadow-xl">
+          Lihat Selengkapnya
         </a>
       </div>
     </div>
@@ -899,8 +1141,8 @@ include 'components/head.php';
       50% { opacity: 0.75; transform: scale(0.98); }
     }
   </style>
-  <section class="py-3 relative overflow-visible" style="background-image: url('<?php echo ASSETS_URL; ?>/images/Back_batik.png'); background-size: cover; background-position: center;">
-    <div class="absolute inset-0 bg-black/40"></div>
+  <section class="py-3 relative overflow-visible" style="background-image: url('<?php echo ASSETS_URL; ?>/images/background3.png'); background-size: cover; background-position: center;">
+
     <div class="absolute inset-0 bg-[url('<?php echo ASSETS_URL; ?>/images/texture-pattern-light.png')] opacity-10"></div>
     <div class="max-w-6xl mx-auto px-6 relative z-10">
       <div class="flex flex-col items-center justify-center gap-8 md:flex-row md:items-center md:justify-center text-center">
@@ -909,8 +1151,8 @@ include 'components/head.php';
         </div>
         <div class="max-w-xl">
           <h2 class="font-serif text-2xl md:text-4xl text-blue-900 font-bold mb-4 cta-typing"><span class="whitespace-nowrap">Bergabung Bersama Kami</span></h2>
-          <p class="text-blue-800 font-bold text-lg md:text-xl mb-6 cta-fade-in cta-delay-200">Daftarkan putra-putri Anda di SLB-C YPSLB Gemolong</p>
-          <a href="pages/ppdb.php" class="inline-block px-10 py-4 bg-white text-orange-600 font-bold text-xs uppercase tracking-widest rounded hover:bg-orange-100 hover:text-orange-700 transition-colors cta-fade-in cta-delay-300 cta-button-blink">Daftar Sekarang</a>
+          <p class="text-blue-800 font-bold text-lg md:text-xl mb-6 cta-fade-in cta-delay-200">Daftarkan putra-putri Anda di SLB BC KARYA SEJAHTERA</p>
+          <a href="<?= BASE_URL ?>/pages/ppdb.php" class="inline-block px-10 py-4 bg-white text-orange-600 font-bold text-xs uppercase tracking-widest rounded hover:bg-orange-100 hover:text-orange-700 transition-colors cta-fade-in cta-delay-300 cta-button-blink">Daftar Sekarang</a>
         </div>
       </div>
     </div>
@@ -920,77 +1162,139 @@ include 'components/head.php';
 
   <!-- BERITA TERBARU -->
   <?php if (!empty($homepageSections['berita'])): ?>
-  <section id="berita" class="py-24 bg-white">
+  <section id="berita" class="py-24 bg-slate-50">
     <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-16">
-        <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+        <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center rounded-3xl shadow-xl" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
           <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Informasi Terbaru</span>
           <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Berita Terbaru</h2>
         </div>
-        <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+        <div class="w-20 h-1 bg-slate-900 mx-auto"></div>
       </div>
 
       <?php if (!empty($berita)): ?>
-        <?php 
-          $berita_items_per_page = 4; // 1 baris (lg:grid-cols-4)
-          $berita_total_items = count($berita);
-          $berita_total_pages = ceil($berita_total_items / $berita_items_per_page);
+        <?php
+          $selectedBerita = reset($berita);
+          $sidebarBerita = array_slice($berita, 1);
         ?>
-        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6" id="beritaContainer">
-          <?php 
-            $berita_index = 0;
-            foreach (array_slice($berita, 0, 8) as $item): 
-          ?>
-            <article class="bg-white rounded-xl border border-brand-border/30 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 berita-item" data-index="<?php echo $berita_index; ?>">
-              <div class="relative overflow-hidden">
-                <img src="<?php echo htmlspecialchars($item['gambar'] ?? 'https://picsum.photos/seed/' . urlencode($item['judul']) . '/800/400'); ?>" 
-                     alt="<?php echo htmlspecialchars($item['judul'] ?? ''); ?>" 
-                     class="w-full h-56 object-cover transition-transform duration-500 hover:scale-110">
-                <div class="absolute top-4 left-4">
-                  <span class="px-3 py-1 bg-brand-accent text-white text-xs font-bold rounded-full uppercase tracking-wider">
-                    <?php echo htmlspecialchars($item['kategori'] ?? 'Umum'); ?>
-                  </span>
+        <div class="rounded-[32px] border border-brand-border/40 bg-white overflow-visible shadow-xl">
+          <div class="border-b border-brand-border/40 bg-slate-500 px-6 py-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-[10px] uppercase tracking-[0.4em] text-slate-300 font-semibold">Papan Berita</p>
+                <h3 class="text-lg font-semibold text-white">Berita Terbaru</h3>
+              </div>
+              <div class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-[10px] uppercase tracking-[0.28em] font-semibold text-slate-900">
+                <span class="h-2 w-2 rounded-full bg-slate-900"></span>
+                Update
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:grid lg:grid-cols-[2fr_1fr] gap-6 p-4 lg:p-6 bg-slate-50">
+            <main class="space-y-6">
+              <?php if ($selectedBerita): ?>
+                <article class="bg-white overflow-hidden rounded-[28px] shadow-sm">
+                  <?php 
+                  $videoUrl = $selectedBerita['video_url'] ?? '';
+                  $isYoutube = false;
+                  $youtubeEmbedUrl = '';
+                  if (!empty($videoUrl)) {
+                      if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i', $videoUrl, $match)) {
+                          $isYoutube = true;
+                          $youtubeEmbedUrl = "https://www.youtube.com/embed/" . $match[1];
+                      }
+                  }
+                  ?>
+                  <?php if (!empty($videoUrl)): ?>
+                    <div class="relative overflow-hidden w-full aspect-video bg-black rounded-t-[28px]">
+                      <?php if ($isYoutube): ?>
+                        <iframe class="w-full h-full border-0" 
+                                src="<?php echo $youtubeEmbedUrl; ?>" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen></iframe>
+                      <?php else: ?>
+                        <video src="<?php echo htmlspecialchars($videoUrl); ?>" controls class="w-full h-full object-contain"></video>
+                      <?php endif; ?>
+                    </div>
+                  <?php else: ?>
+                    <div class="relative overflow-hidden h-[340px] md:h-[420px] rounded-t-[28px]">
+                      <img src="<?php echo htmlspecialchars($selectedBerita['gambar'] ?? 'https://picsum.photos/seed/' . urlencode($selectedBerita['judul'] ?? 'default') . '/1200/700'); ?>"
+                           alt="<?php echo htmlspecialchars($selectedBerita['judul'] ?? 'Berita'); ?>"
+                           class="w-full h-full object-cover">
+                    </div>
+                  <?php endif; ?>
+                  <div class="p-6 lg:p-8">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 text-xs uppercase tracking-[0.24em] font-semibold text-slate-500">
+                      <span><?php echo htmlspecialchars((new DateTime($selectedBerita['tanggal_upload'] ?? $selectedBerita['tanggal'] ?? 'now'))->format('d F Y')); ?></span>
+                      <span class="bg-slate-200 text-slate-900 px-3 py-1.5 rounded-full shadow-sm"><?php echo htmlspecialchars($selectedBerita['kategori'] ?? 'Umum'); ?></span>
+                    </div>
+                    <div class="border-t border-slate-200 pt-4">
+                      <div class="flex items-center gap-3 mb-3">
+                        <span class="block h-1.5 w-14 bg-slate-900 rounded-full"></span>
+                        <span class="text-[11px] uppercase tracking-[0.4em] text-slate-900 font-semibold">Berita</span>
+                        <span class="block h-1.5 flex-1 bg-slate-900 rounded-full"></span>
+                      </div>
+                      <h2 class="font-serif text-3xl md:text-4xl font-bold text-slate-900 leading-tight mb-4"><?php echo htmlspecialchars($selectedBerita['judul'] ?? 'Berita Terbaru'); ?></h2>
+                      <?php
+                        $share_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(BASE_URL, '/') . '/pages/berita.php?id=' . urlencode($selectedBerita['id'] ?? '');
+                        $share_title = $selectedBerita['judul'] ?? SITE_NAME;
+                        include __DIR__ . '/components/share.php';
+                      ?>
+                      <div class="prose prose-slate max-w-none text-slate-700 leading-relaxed text-justify">
+                        <?php echo nl2br(htmlspecialchars(strip_tags($selectedBerita['konten'] ?? 'Belum ada konten untuk berita ini.'))); ?>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              <?php endif; ?>
+            </main>
+
+            <aside class="space-y-4 bg-slate-200 text-slate-900 rounded-[28px] border border-slate-300 p-4 shadow-xl">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+            
+                  <h3 class="font-serif text-xl font-bold text-slate-900">Lihat Berita Lainnya</h3>
                 </div>
               </div>
-              <div class="p-6">
-                <div class="flex items-center gap-2 mb-3 text-xs text-brand-muted">
-                  <iconify-icon icon="lucide:calendar" class="w-4 h-4"></iconify-icon>
-                  <?php 
-                  $tanggal = isset($item['tanggal_upload']) ? new DateTime($item['tanggal_upload']) : new DateTime();
-                  setlocale(LC_TIME, 'id_ID.UTF-8');
-                  $tanggalFormatted = strftime('%d %B %Y', $tanggal->getTimestamp());
-                  echo htmlspecialchars($tanggalFormatted);
-                  ?>
+              <div id="sidebarBeritaList" class="divide-y divide-slate-300">
+                <?php foreach ($sidebarBerita as $sidebarIndex => $item): ?>
+                  <a href="pages/berita.php?id=<?php echo urlencode($item['id'] ?? ''); ?>" class="sidebar-berita-item group block py-4 transition-all hover:bg-slate-100 px-4 rounded-xl" data-index="<?php echo $sidebarIndex; ?>">
+                    <div class="flex items-start gap-3">
+                      <div class="flex-shrink-0 w-14 h-14 overflow-hidden rounded-xl bg-slate-100 border border-slate-300">
+                        <img src="<?php echo htmlspecialchars($item['gambar'] ?? 'https://picsum.photos/seed/' . urlencode($item['judul'] ?? 'list') . '/240/240'); ?>" alt="<?php echo htmlspecialchars($item['judul'] ?? ''); ?>" class="w-full h-full object-cover">
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-2 text-[10px] uppercase tracking-[0.24em] text-slate-500">
+                          <span><?php echo htmlspecialchars((new DateTime($item['tanggal_upload'] ?? $item['tanggal'] ?? 'now'))->format('d F Y')); ?></span>
+                          <span class="inline-flex items-center rounded-full bg-slate-300 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700"><?php echo htmlspecialchars($item['kategori'] ?? 'Umum'); ?></span>
+                        </div>
+                        <h4 class="text-sm font-semibold text-slate-900"><?php echo htmlspecialchars($item['judul'] ?? ''); ?></h4>
+                      </div>
+                    </div>
+                  </a>
+                <?php endforeach; ?>
+              </div>
+              <div class="mt-4 space-y-3 text-sm text-slate-600">
+                <div class="flex items-center justify-between gap-3">
+                  <button type="button" id="sidebarPrevBtn" class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2 transition hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <iconify-icon icon="lucide:chevrons-left" class="w-4 h-4"></iconify-icon> Sebelumnya
+                  </button>
+                  <button type="button" id="sidebarNextBtn" class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2 transition hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Selanjutnya <iconify-icon icon="lucide:chevrons-right" class="w-4 h-4"></iconify-icon>
+                  </button>
                 </div>
-                <h3 class="font-serif text-xl font-semibold text-brand-dark mb-3 line-clamp-2">
-                  <?php echo htmlspecialchars($item['judul'] ?? ''); ?>
-                </h3>
-                <p class="text-sm text-brand-muted line-clamp-3 mb-4">
-                  <?php echo htmlspecialchars(strip_tags($item['konten'] ?? '')); ?>
-                </p>
-                <a href="pages/berita.php?id=<?php echo urlencode($item['id'] ?? ''); ?>" class="inline-flex items-center gap-2 text-brand-accent font-semibold text-sm hover:gap-3 transition-all">
-                  Baca Selengkapnya
-                  <iconify-icon icon="lucide:arrow-right" class="w-4 h-4"></iconify-icon>
+                <a href="pages/berita.php" class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-900 transition hover:bg-slate-100">
+                  Lihat Semua Berita
                 </a>
               </div>
-            </article>
-          <?php $berita_index++; endforeach; ?>
-        </div>
-        <?php if ($berita_total_pages > 1): ?>
-          <div class="flex items-center justify-center gap-4 mt-12" id="beritaPagination">
-            <button id="beritaPrevBtn" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              <iconify-icon icon="lucide:chevron-left" class="w-5 h-5 inline-block mr-1"></iconify-icon> Sebelumnya
-            </button>
-            <span class="text-gray-600 font-medium">Halaman <span id="beritaCurrentPage">1</span> dari <?php echo $berita_total_pages; ?></span>
-            <button id="beritaNextBtn" class="px-6 py-2 bg-brand-accent hover:bg-brand-accent-hover text-white font-semibold rounded-lg transition-colors">
-              Selanjutnya <iconify-icon icon="lucide:chevron-right" class="w-5 h-5 inline-block ml-1"></iconify-icon>
-            </button>
+            </aside>
           </div>
-        <?php endif; ?>
+        </div>
       <?php else: ?>
-        <div class="text-center py-16 bg-brand-bg/50 rounded-xl">
-          <iconify-icon icon="lucide:newspaper" class="text-6xl text-brand-muted/30 mb-4"></iconify-icon>
-          <p class="text-brand-muted">Belum ada berita terbaru.</p>
+        <div class="text-center py-16 bg-slate-100 rounded-3xl border border-slate-200">
+          <iconify-icon icon="lucide:newspaper" class="text-6xl text-slate-400 mb-4"></iconify-icon>
+          <p class="text-slate-600">Belum ada berita terbaru.</p>
         </div>
       <?php endif; ?>
     </div>
@@ -1013,7 +1317,7 @@ include 'components/head.php';
       <?php foreach ($galeri as $jenis => $items): ?>
         <?php if (!empty($items)): ?>
           <?php 
-            $galeri_items_per_page = $jenis === 'Photo' ? 4 : 2; // 1 baris (Photo: 4 kolom, Video: 2 kolom
+            $galeri_items_per_page = $jenis === 'Photo' ? 4 : 6; // Photo: 4 kolom (1 baris), Video: 3 kolom (2 baris = 6 items)
             $galeri_total_items = count($items);
             $galeri_total_pages = ceil($galeri_total_items / $galeri_items_per_page);
           ?>
@@ -1024,19 +1328,19 @@ include 'components/head.php';
                 <?php echo $jenis; ?>
               </h3>
             </div>
-            <div class="grid <?php echo $jenis === 'Photo' ? 'md:grid-cols-4' : 'md:grid-cols-2'; ?> gap-8" id="galeriContainer-<?php echo $jenis; ?>">
+            <div class="grid <?php echo $jenis === 'Photo' ? 'md:grid-cols-4' : 'md:grid-cols-3'; ?> gap-8" id="galeriContainer-<?php echo $jenis; ?>">
               <?php 
                 $galeri_index = 0;
                 foreach ($items as $item): 
               ?>
-                <div class="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow group border border-brand-border/30 galeri-item-<?php echo $jenis; ?>" data-index="<?php echo $galeri_index; ?>">
-                  <div class="relative overflow-hidden <?php echo $jenis === 'Video' ? 'h-80' : 'h-56'; ?>">
+                <div class="bg-white rounded-lg overflow-hidden shadow-sm <?php echo $jenis === 'Photo' ? 'hover:shadow-lg transition-shadow group' : ''; ?> border border-brand-border/30 galeri-item-<?php echo $jenis; ?>" data-index="<?php echo $galeri_index; ?>">
+                  <div class="relative overflow-hidden h-56">
                     <?php 
                     $fileUrl = $item['file_url'] ?? 'https://picsum.photos/seed/' . urlencode($item['judul']) . '/600/400';
                     $isVideo = strtolower(pathinfo($fileUrl, PATHINFO_EXTENSION)) === 'mp4' || strtolower(pathinfo($fileUrl, PATHINFO_EXTENSION)) === 'webm' || strtolower(pathinfo($fileUrl, PATHINFO_EXTENSION)) === 'ogg' || strpos(strtolower($fileUrl), 'video') !== false;
                     if ($isVideo): 
                     ?>
-                      <video controls class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                      <video controls class="w-full h-full object-cover">
                         <source src="<?php echo htmlspecialchars($fileUrl); ?>" type="video/mp4">
                         Your browser does not support the video tag.
                       </video>
@@ -1051,7 +1355,7 @@ include 'components/head.php';
                   </div>
                   <div class="p-6">
                     <h4 class="font-serif text-lg text-blue-800 mb-2"><?php echo htmlspecialchars($item['judul'] ?? ''); ?></h4>
-                    <div class="text-xs text-blue-300 mb-3">
+                    <div class="text-xs text-blue-300 mb-2">
                       <iconify-icon icon="lucide:calendar" class="inline-block mr-1"></iconify-icon>
                       <?php 
                       // Format to long date (e.g., 10 Juni 2024)
@@ -1060,6 +1364,36 @@ include 'components/head.php';
                       $tanggalFormatted = strftime('%d %B %Y', $tanggal->getTimestamp());
                       echo htmlspecialchars($tanggalFormatted);
                       ?>
+                    </div>
+                    <!-- Share buttons dedicated row -->
+                    <div class="flex items-center gap-2 mb-3 flex-nowrap overflow-x-auto py-1">
+                      <?php
+                        $galeri_share_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(BASE_URL, '/') . '/pages/galeri.php';
+                        $galeri_share_title = $item['judul'] ?? SITE_NAME;
+                        $encUrl = rawurlencode($galeri_share_url);
+                        $encTitle = rawurlencode($galeri_share_title);
+                      ?>
+                      <a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors flex items-center shrink-0" title="Bagikan ke Facebook">
+                        <iconify-icon icon="mdi:facebook" class="w-8 h-8"></iconify-icon>
+                      </a>
+                      <a href="https://twitter.com/intent/tweet?text=<?php echo $encTitle; ?>&url=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-600 transition-colors flex items-center shrink-0" title="Bagikan ke X/Twitter">
+                        <iconify-icon icon="mdi:twitter" class="w-8 h-8"></iconify-icon>
+                      </a>
+                      <a href="https://api.whatsapp.com/send?text=<?php echo $encTitle; ?>%20<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="text-green-500 hover:text-green-700 transition-colors flex items-center shrink-0" title="Bagikan ke WhatsApp">
+                        <iconify-icon icon="mdi:whatsapp" class="w-8 h-8"></iconify-icon>
+                      </a>
+                      <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?php echo $encUrl; ?>" target="_blank" rel="noopener noreferrer" class="text-blue-700 hover:text-blue-900 transition-colors flex items-center shrink-0" title="Bagikan ke LinkedIn">
+                        <iconify-icon icon="mdi:linkedin" class="w-8 h-8"></iconify-icon>
+                      </a>
+                      <a href="https://t.me/share/url?url=<?php echo $encUrl; ?>&text=<?php echo $encTitle; ?>" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 transition-colors flex items-center shrink-0" title="Bagikan ke Telegram">
+                        <iconify-icon icon="mdi:telegram" class="w-8 h-8"></iconify-icon>
+                      </a>
+                      <a href="mailto:?subject=<?php echo $encTitle; ?>&body=<?php echo $encUrl; ?>" class="text-red-500 hover:text-red-700 transition-colors flex items-center shrink-0" title="Bagikan lewat Email">
+                        <iconify-icon icon="mdi:email" class="w-8 h-8"></iconify-icon>
+                      </a>
+                      <button type="button" onclick="copyShareLink('<?php echo htmlspecialchars($galeri_share_url, ENT_QUOTES, 'UTF-8'); ?>', this)" class="text-slate-500 hover:text-slate-700 transition-colors flex items-center shrink-0" title="Salin tautan">
+                        <iconify-icon icon="mdi:link-variant" class="w-8 h-8"></iconify-icon>
+                      </button>
                     </div>
                     <p class="text-brand-muted text-sm mb-4 line-clamp-3"><?php echo htmlspecialchars($item['konten'] ?? ''); ?></p>
                   </div>
@@ -1138,7 +1472,7 @@ include 'components/head.php';
             <iconify-icon icon="lucide:help-circle" class="mx-auto group-hover:scale-110 transition-transform" style="font-size: 64px; color: white;"></iconify-icon>
           </div>
           <h3 class="font-serif text-lg text-white mb-1">FAQ</h3>
-          <p class="text-purple-100 text-xs">Pertanyaan yang sering diajukan</p>
+          <p class="text-purple-100 text-xs">Pertanyaan Sudah Diajukan</p>
         </a>
       </div>
     </div>
@@ -1234,7 +1568,7 @@ include 'components/head.php';
   <div id="modal-faq" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
       <div class="p-6 border-b border-brand-border/30 flex items-center justify-between">
-        <h3 class="text-xl font-semibold text-brand-dark">Pertanyaan yang Sering Diajukan</h3>
+        <h3 class="text-xl font-semibold text-brand-dark">Pertanyaan Sudah Diajukan</h3>
         <button onclick="closeModal('modal-faq')" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
           <iconify-icon icon="lucide:x" class="w-6 h-6"></iconify-icon>
         </button>
@@ -1273,7 +1607,7 @@ include 'components/head.php';
       <div class="text-center mb-16">
         <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
           <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">FAQ</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Pertanyaan yang Sering Diajukan</h2>
+          <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Pertanyaan Sudah Diajukan</h2>
         </div>
         <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
       </div>
@@ -1316,6 +1650,75 @@ include 'components/head.php';
     </div>
   </section>
 
+  <!-- TESTIMONIALS -->
+  <?php if (!empty($homepageSections['testimoni'])): ?>
+  <section id="testimoni" class="py-24 bg-[#4A3728] relative overflow-hidden">
+    <!-- Background decoration -->
+    <div class="absolute inset-0 opacity-10" style="background-image:url('<?php echo ASSETS_URL; ?>/images/background.png'); background-size: cover; background-position: center;"></div>
+    
+    <div class="max-w-7xl mx-auto px-6 relative z-10">
+      <div class="text-center mb-16">
+        <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Testimoni</span>
+          <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Apa Kata Mereka</h2>
+        </div>
+        <div class="w-20 h-1 bg-gradient-to-r from-[#B8860B] to-[#DAA520] mx-auto"></div>
+      </div>
+
+      <?php if (empty($testimonials)): ?>
+        <div class="text-center py-16 bg-white/90 rounded-xl border border-[#B8860B]/30 shadow-sm">
+          <iconify-icon icon="lucide:message-square-heart" class="text-6xl text-[#4A3728]/30 mx-auto mb-4"></iconify-icon>
+          <p class="text-[#4A3728]/70">Belum ada testimoni.</p>
+        </div>
+      <?php else: ?>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <?php foreach ($testimonials as $testimonial): ?>
+            <div class="relative group">
+              <!-- Quote decorations -->
+              <div class="absolute -top-4 -left-2 text-[#B8860B]/20 text-8xl font-serif">"</div>
+              <div class="absolute -bottom-4 -right-2 text-[#B8860B]/20 text-8xl font-serif rotate-180">"</div>
+              
+              <div class="bg-[#F2EBDF] rounded-3xl border-4 border-[#B8860B]/50 overflow-visible shadow-2xl transition-all duration-500 hover:shadow-[0_0_30px_rgba(184,134,11,0.4)] hover:-translate-y-3 pt-10">
+                <!-- Photo -->
+                <div class="relative -mt-8 mx-auto w-32 h-32 mb-6">
+                  <img src="<?php echo htmlspecialchars($testimonial['foto'] ?? 'https://picsum.photos/seed/testimoni-' . $testimonial['id'] . '/200/200.jpg'); ?>" alt="<?php echo htmlspecialchars($testimonial['nama']); ?>" class="w-full h-full rounded-full object-cover" onerror="this.src='https://picsum.photos/seed/testimoni-<?php echo $testimonial['id']; ?>/200/200.jpg'">
+                </div>
+                
+                <div class="p-8 pt-0 text-center">
+                  <!-- Testimonial text -->
+                  <p class="text-[#4A3728] text-sm md:text-base italic leading-relaxed mb-6 font-medium">
+                    "<?php echo htmlspecialchars($testimonial['pesan']); ?>"
+                  </p>
+                  
+                  <!-- Divider -->
+                  <div class="w-16 h-1 bg-gradient-to-r from-transparent via-[#B8860B] to-transparent mx-auto mb-4"></div>
+                  
+                  <!-- Name and role -->
+                  <h3 class="text-xl font-bold text-[#4A3728] uppercase tracking-widest mb-2">
+                    <?php echo htmlspecialchars($testimonial['nama']); ?>
+                  </h3>
+                  <p class="text-sm text-[#B8860B] uppercase tracking-wider font-semibold mb-4">
+                    <?php echo htmlspecialchars($testimonial['jabatan'] ?? '-'); ?>
+                  </p>
+                  
+                  <!-- Stars and thumbs up -->
+                  <div class="flex items-center justify-center gap-2">
+                    <?php $rating = (int)($testimonial['bintang'] ?? 5); ?>
+                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                      <iconify-icon icon="<?= $i <= $rating ? 'mdi:star' : 'mdi:star-outline' ?>" class="text-xl <?= $i <= $rating ? 'text-[#B8860B]' : 'text-gray-300' ?>"></iconify-icon>
+                    <?php endfor; ?>
+                    <iconify-icon icon="lucide:thumbs-up" class="text-[#4A3728] text-2xl ml-2"></iconify-icon>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+  </section>
+  <?php endif; ?>
+
   <!-- MODAL FORM PERTANYAAN -->
   <div id="questionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -1334,15 +1737,22 @@ include 'components/head.php';
 
       <!-- Modal Body -->
       <div class="p-6 md:p-8 space-y-6">
-        <form method="POST" action="pages/faq.php" class="space-y-5">
-          <input type="hidden" name="action" value="submit_question">
+        <!-- Alert Box -->
+        <div id="modalAlert" class="hidden rounded-lg p-4 flex items-start gap-3 border-2">
+          <iconify-icon id="modalAlertIcon" icon="lucide:alert-circle" class="w-6 h-6 flex-shrink-0 mt-0.5"></iconify-icon>
+          <div>
+            <p id="modalAlertText" class="font-semibold text-sm"></p>
+          </div>
+        </div>
 
+        <!-- Step 1: Input Form -->
+        <form id="formRequestOtp" class="space-y-5">
           <!-- Nama -->
           <div>
             <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide">Nama Lengkap</label>
             <input
               type="text"
-              name="nama"
+              id="input_nama"
               placeholder="Masukkan nama Anda..."
               class="w-full px-5 py-3 border-2 border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all text-sm"
               required>
@@ -1353,7 +1763,7 @@ include 'components/head.php';
             <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide">Email</label>
             <input
               type="email"
-              name="email"
+              id="input_email"
               placeholder="Masukkan email Anda..."
               class="w-full px-5 py-3 border-2 border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all text-sm"
               required>
@@ -1363,7 +1773,7 @@ include 'components/head.php';
           <div>
             <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide">Pertanyaan Anda</label>
             <textarea
-              name="pertanyaan"
+              id="input_pertanyaan"
               placeholder="Tulis pertanyaan Anda dengan detail..."
               rows="6"
               class="w-full px-5 py-3 border-2 border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all resize-none text-sm"
@@ -1381,9 +1791,52 @@ include 'components/head.php';
             </button>
             <button
               type="submit"
+              id="btnRequestOtp"
               class="flex-1 px-6 py-3 bg-gradient-to-r from-brand-accent to-brand-accent/80 hover:from-brand-secondary hover:to-brand-secondary/80 text-white font-bold text-sm uppercase tracking-widest rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
               <iconify-icon icon="lucide:send" class="text-base"></iconify-icon>
-              Kirim Pertanyaan
+              Kirim Kode Verifikasi
+            </button>
+          </div>
+        </form>
+
+        <!-- Step 2: OTP Verification Form (Hidden Initially) -->
+        <form id="formVerifyOtp" class="hidden space-y-5">
+          <div class="text-center py-2">
+            <iconify-icon icon="lucide:mail-check" class="text-5xl text-brand-accent mb-3"></iconify-icon>
+            <p class="text-sm text-brand-muted">Masukkan 6 digit kode verifikasi yang telah dikirim ke email Anda.</p>
+            
+            <!-- Local testing note -->
+            <div id="otpDeveloperPreview" class="hidden mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-mono">
+              [DEVELOPER ONLY] OTP: <span id="developerOtpCode" class="font-bold text-sm"></span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide text-center">Kode Verifikasi</label>
+            <input
+              type="text"
+              id="input_otp"
+              placeholder="123456"
+              maxlength="6"
+              pattern="[0-9]{6}"
+              class="w-full px-5 py-3 border-2 border-brand-border rounded-lg text-center font-mono text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all"
+              required>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-3 pt-4 border-t border-brand-border">
+            <button
+              type="button"
+              id="btnBackToStep1"
+              class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-brand-dark font-bold text-sm uppercase tracking-widest rounded-lg transition-colors">
+              Kembali
+            </button>
+            <button
+              type="submit"
+              id="btnVerifyOtp"
+              class="flex-1 px-6 py-3 bg-gradient-to-r from-brand-accent to-brand-accent/80 hover:from-brand-secondary hover:to-brand-secondary/80 text-white font-bold text-sm uppercase tracking-widest rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+              <iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon>
+              Verifikasi & Kirim
             </button>
           </div>
         </form>
@@ -1391,8 +1844,79 @@ include 'components/head.php';
     </div>
   </div>
 
+  <!-- DETAIL MODAL UNTUK PROGRAM & FASILITAS -->
+  <div id="detailCardModal" class="fixed inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-50 hidden px-4 py-6 pointer-events-none">
+    <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl transform transition-all flex flex-col max-h-[80vh]">
+      <!-- Header / Image -->
+      <div class="relative h-64 sm:h-80 w-full bg-slate-100 flex-shrink-0">
+        <img id="detailModalImg" src="" alt="Detail Image" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent"></div>
+        <div class="absolute bottom-6 left-6 right-6">
+          <span id="detailModalCategory" class="text-[10px] font-bold tracking-[0.2em] uppercase text-amber-400 mb-1 inline-block">Program Unggulan</span>
+          <h3 id="detailModalTitle" class="font-serif text-2xl md:text-3xl text-white font-semibold"></h3>
+        </div>
+      </div>
+      <!-- Content / Description -->
+      <div class="p-6 md:p-8 overflow-y-auto flex-grow">
+        <p id="detailModalDesc" class="text-slate-600 leading-relaxed text-sm md:text-base whitespace-pre-line"></p>
+      </div>
+    </div>
+  </div>
+
   <!-- JavaScript untuk Modal, FAQ & Form -->
   <script>
+    function openDetailCardModal(element) {
+      const category = element.getAttribute('data-category');
+      const title = element.getAttribute('data-nama');
+      const img = element.getAttribute('data-gambar');
+      const desc = element.getAttribute('data-deskripsi');
+
+      const modal = document.getElementById('detailCardModal');
+      const modalCat = document.getElementById('detailModalCategory');
+      const modalTitle = document.getElementById('detailModalTitle');
+      const modalImg = document.getElementById('detailModalImg');
+      const modalDesc = document.getElementById('detailModalDesc');
+
+      if (modalCat) {
+        modalCat.textContent = category;
+        if (category === 'Fasilitas') {
+          modalCat.className = "text-[10px] font-bold tracking-[0.2em] uppercase text-teal-400 mb-1 inline-block";
+        } else {
+          modalCat.className = "text-[10px] font-bold tracking-[0.2em] uppercase text-amber-400 mb-1 inline-block";
+        }
+      }
+      if (modalTitle) modalTitle.textContent = title;
+      if (modalImg) modalImg.src = img;
+      if (modalDesc) modalDesc.textContent = desc;
+
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeDetailCardModal() {
+      const modal = document.getElementById('detailCardModal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    // Close detail modal when clicking outside
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('detailCardModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeDetailCardModal();
+        }
+      });
+    });
+
+    // Close detail modal on ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && document.getElementById('detailCardModal') && !document.getElementById('detailCardModal').classList.contains('hidden')) {
+        closeDetailCardModal();
+      }
+    });
+
     function openModal(modalId) {
       document.getElementById(modalId).classList.remove('hidden');
       document.body.style.overflow = 'hidden';
@@ -1406,11 +1930,17 @@ include 'components/head.php';
     function openQuestionModal() {
       document.getElementById('questionModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+      showStep(1);
+      hideAlert();
     }
 
     function closeQuestionModal() {
       document.getElementById('questionModal').classList.add('hidden');
       document.body.style.overflow = 'auto';
+      document.getElementById('formRequestOtp').reset();
+      document.getElementById('formVerifyOtp').reset();
+      showStep(1);
+      hideAlert();
     }
 
     // Close question modal when clicking outside
@@ -1425,6 +1955,128 @@ include 'components/head.php';
       if (e.key === 'Escape' && !document.getElementById('questionModal').classList.contains('hidden')) {
         closeQuestionModal();
       }
+    });
+
+    // Helper functions for OTP steps
+    function showStep(stepNum) {
+      if (stepNum === 1) {
+        document.getElementById('formRequestOtp').classList.remove('hidden');
+        document.getElementById('formVerifyOtp').classList.add('hidden');
+      } else {
+        document.getElementById('formRequestOtp').classList.add('hidden');
+        document.getElementById('formVerifyOtp').classList.remove('hidden');
+        document.getElementById('input_otp').value = '';
+      }
+    }
+
+    function showAlert(type, message) {
+      const alertBox = document.getElementById('modalAlert');
+      const alertIcon = document.getElementById('modalAlertIcon');
+      const alertText = document.getElementById('modalAlertText');
+
+      alertText.textContent = message;
+      if (type === 'success') {
+        alertBox.className = "rounded-lg p-4 flex items-start gap-3 border-2 bg-green-50 border-green-500 text-green-700";
+        alertIcon.setAttribute('icon', 'lucide:check-circle');
+      } else {
+        alertBox.className = "rounded-lg p-4 flex items-start gap-3 border-2 bg-red-50 border-red-500 text-red-700";
+        alertIcon.setAttribute('icon', 'lucide:alert-circle');
+      }
+      alertBox.classList.remove('hidden');
+    }
+
+    function hideAlert() {
+      document.getElementById('modalAlert').classList.add('hidden');
+    }
+
+    // Go back to step 1
+    document.getElementById('btnBackToStep1')?.addEventListener('click', function() {
+      showStep(1);
+      hideAlert();
+    });
+
+    // AJAX Form submissions
+    document.getElementById('formRequestOtp')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nama = document.getElementById('input_nama').value;
+      const email = document.getElementById('input_email').value;
+      const pertanyaan = document.getElementById('input_pertanyaan').value;
+      const btn = document.getElementById('btnRequestOtp');
+
+      btn.disabled = true;
+      btn.innerHTML = '<iconify-icon icon="lucide:loader-2" class="animate-spin text-base"></iconify-icon> Memproses...';
+      hideAlert();
+
+      const formData = new FormData();
+      formData.append('action', 'request_otp');
+      formData.append('nama', nama);
+      formData.append('email', email);
+      formData.append('pertanyaan', pertanyaan);
+
+      fetch('pages/faq.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:send" class="text-base"></iconify-icon> Kirim Kode Verifikasi';
+        
+        if (data.success) {
+          showAlert('success', data.message);
+          showStep(2);
+          if (data.otp_preview) {
+            document.getElementById('developerOtpCode').textContent = data.otp_preview;
+            document.getElementById('otpDeveloperPreview').classList.remove('hidden');
+          }
+        } else {
+          showAlert('error', data.message);
+        }
+      })
+      .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:send" class="text-base"></iconify-icon> Kirim Kode Verifikasi';
+        showAlert('error', 'Terjadi kesalahan sistem, silakan coba lagi.');
+      });
+    });
+
+    document.getElementById('formVerifyOtp')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const otp = document.getElementById('input_otp').value;
+      const btn = document.getElementById('btnVerifyOtp');
+
+      btn.disabled = true;
+      btn.innerHTML = '<iconify-icon icon="lucide:loader-2" class="animate-spin text-base"></iconify-icon> Memverifikasi...';
+      hideAlert();
+
+      const formData = new FormData();
+      formData.append('action', 'verify_otp');
+      formData.append('otp', otp);
+
+      fetch('pages/faq.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon> Verifikasi & Kirim';
+
+        if (data.success) {
+          showAlert('success', data.message);
+          setTimeout(() => {
+            closeQuestionModal();
+            window.location.reload();
+          }, 2000);
+        } else {
+          showAlert('error', data.message);
+        }
+      })
+      .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon> Verifikasi & Kirim';
+        showAlert('error', 'Terjadi kesalahan sistem, silakan coba lagi.');
+      });
     });
 
     // Tutup modal jika klik di luar konten
@@ -1664,11 +2316,52 @@ include 'components/head.php';
       }
     })();
 
+    // Sidebar pagination untuk Berita Lainnya
+    (function() {
+      const itemsPerPage = 5;
+      const items = document.querySelectorAll('.sidebar-berita-item');
+      const totalItems = items.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+      let currentPage = 1;
+
+      const prevBtn = document.getElementById('sidebarPrevBtn');
+      const nextBtn = document.getElementById('sidebarNextBtn');
+
+      function showSidebarPage(page) {
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+
+        items.forEach((item, index) => {
+          item.style.display = index >= start && index < end ? '' : 'none';
+        });
+
+        currentPage = page;
+        if (prevBtn) prevBtn.disabled = page === 1;
+        if (nextBtn) nextBtn.disabled = page === totalPages;
+      }
+
+      if (prevBtn && nextBtn) {
+        prevBtn.addEventListener('click', function() {
+          if (currentPage > 1) {
+            showSidebarPage(currentPage - 1);
+          }
+        });
+
+        nextBtn.addEventListener('click', function() {
+          if (currentPage < totalPages) {
+            showSidebarPage(currentPage + 1);
+          }
+        });
+      }
+
+      showSidebarPage(1);
+    })();
+
     // Pagination untuk Galeri (Photo dan Video)
     (function() {
       // Function untuk inisialisasi pagination untuk jenis tertentu
       function initPagination(jenis) {
-        const itemsPerPage = jenis === 'Photo' ? 4 : 2; // 1 baris (Photo: 4 kolom, Video: 2 kolom)
+        const itemsPerPage = jenis === 'Photo' ? 4 : 6; // Photo: 4 kolom, Video: 6 kolom (3 per baris x 2 baris)
         const items = document.querySelectorAll(`.galeri-item-${jenis}`);
         const totalItems = items.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -1720,6 +2413,29 @@ include 'components/head.php';
       initPagination('Photo');
       initPagination('Video');
     })();
+
+    // Helper share copy link global jika components/share.php tidak terpanggil
+    if (typeof copyShareLink === 'undefined') {
+      window.copyShareLink = function(url, btn) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span class="text-[10px] font-semibold text-green-600">Tersalin</span>';
+            setTimeout(function(){ btn.innerHTML = orig; }, 1500);
+          }).catch(function(){ alert('Salin tautan gagal.'); });
+        } else {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('Tautan disalin.');
+          } catch(e) { alert('Salin tautan gagal.'); }
+        }
+      }
+    }
   </script>
 
   </div>

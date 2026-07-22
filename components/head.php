@@ -1,9 +1,30 @@
+<?php
+require_once __DIR__ . '/../includes/public_audio.php';
+?>
 <!DOCTYPE html>
 <html lang="id" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo $title ?? 'SLB-C YPSLB Gemolong — Mandiri, Berkarakter, Berprestasi'; ?></title>
+  <!-- Google Search Console Verification (Meta Tag Method) -->
+  <meta name="google-site-verification" content="xPyShtKOM9IPhbuMjMD7N-GESkRNhoDT0zdG0_Kydzs" />
+  
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="<?php echo $og_type ?? 'website'; ?>">
+  <meta property="og:url" content="<?php echo $og_url ?? ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $_SERVER['REQUEST_URI']); ?>">
+  <meta property="og:title" content="<?php echo htmlspecialchars($og_title ?? ($title ?? 'SLB BC KARYA SEJAHTERA')); ?>">
+  <meta property="og:description" content="<?php echo htmlspecialchars($og_description ?? 'SLB BC KARYA SEJAHTERA — Mandiri, Berkarakter, Berprestasi'); ?>">
+  <meta property="og:image" content="<?php echo htmlspecialchars($og_image ?? (isset($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] : '')); ?>">
+  <meta property="og:site_name" content="SLB BC KARYA SEJAHTERA">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="<?php echo $og_url ?? ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $_SERVER['REQUEST_URI']); ?>">
+  <meta name="twitter:title" content="<?php echo htmlspecialchars($og_title ?? ($title ?? 'SLB BC KARYA SEJAHTERA')); ?>">
+  <meta name="twitter:description" content="<?php echo htmlspecialchars($og_description ?? 'SLB BC KARYA SEJAHTERA — Mandiri, Berkarakter, Berprestasi'); ?>">
+  <meta name="twitter:image" content="<?php echo htmlspecialchars($og_image ?? (isset($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] : '')); ?>">
+
+  <title><?php echo $title ?? 'SLB BC KARYA SEJAHTERA — Mandiri, Berkarakter, Berprestasi'; ?></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -44,6 +65,32 @@
     @keyframes slideInLeft { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
     @keyframes pulse-ring { 0%{transform:scale(1);opacity:1} 100%{transform:scale(1.4);opacity:0} }
     @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    
+    @keyframes textSweep {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .logo-text-sweep {
+      background: linear-gradient(90deg, #1F2D26, #3E6B4E, #d97706, #1F2D26);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: textSweep 6s ease infinite;
+    }
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: translateY(6px) scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .animate-pop-in {
+      animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
 
     .animate-float { animation: float 3s ease-in-out infinite; }
     .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
@@ -65,6 +112,16 @@
     .teacher-card:hover .teacher-img { transform:scale(1.08); }
     .facility-card:hover .facility-img { transform:scale(1.05); }
     .facility-card:hover .facility-overlay { opacity:1; }
+
+    /* Disable mouse hover scale & transform effects on video elements (photos remain untouched) */
+    video,
+    .video-card,
+    .video-card:hover,
+    .video-item,
+    .video-item:hover {
+      transform: none !important;
+      transition: none !important;
+    }
 
     .faq-answer { max-height:0; overflow:hidden; transition:max-height 0.5s ease, padding 0.5s ease; }
     .faq-answer.open { max-height:2000px; }
@@ -196,6 +253,8 @@
       color: #1e40af !important;
     }
     /* Uniform font, size, and blue color for palette titles, section headers, and dates */
+    /* Make counter numbers gold by default */
+    .counter { color: #D4AF37 !important; text-shadow: 0 1px 0 rgba(0,0,0,0.12); }
     .max-w-7xl .text-xs.font-bold.uppercase,
     .max-w-7xl .p-4 .text-xs,
     .max-w-7xl .p-6 h3.font-semibold {
@@ -210,6 +269,22 @@
       font-size: 1.75rem !important;
       line-height: 1 !important;
       color: #1e40af !important;
+    }
+    
+    /* Stats Bar counter white override */
+    .bg-\[#4c3900\] .counter {
+      color: white !important;
+    }
+    
+    /* Statistik section counter white override */
+    .glass-section .counter {
+      color: white !important;
+    }
+
+    /* Ensure glass wrappers do not clip nested palettes */
+    .glass-content-wrapper,
+    .glass-section {
+      overflow: visible !important;
     }
     
     /* Page Hero Style */
@@ -232,3 +307,13 @@
   </style>
 </head>
 <body class="bg-brand-bg text-brand-dark font-sans">
+<?php
+$isPublicPage = !defined('ADMIN_PAGE') && !preg_match('#(^|/)(admin)(/|$)#i', $_SERVER['REQUEST_URI'] ?? '');
+if ($isPublicPage) {
+    $publicAudioUrl = getPublicAudioUrl();
+    if (!empty($publicAudioUrl)) {
+        echo renderPublicAudioPlayer();
+    }
+}
+?>
+

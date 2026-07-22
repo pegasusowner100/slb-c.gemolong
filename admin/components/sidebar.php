@@ -26,6 +26,9 @@ $sidebarLogo = !empty($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] :
     <a href="kelola-program.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'kelola-program.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
       <iconify-icon icon="lucide:book-open"></iconify-icon> Kelola Program
     </a>
+    <a href="kelola-rencana-program.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'kelola-rencana-program.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
+      <iconify-icon icon="lucide:calendar-check"></iconify-icon> Kelola Rencana Program
+    </a>
     <a href="kelola-fasilitas.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'kelola-fasilitas.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
       <iconify-icon icon="lucide:building-2"></iconify-icon> Kelola Fasilitas
     </a>
@@ -56,6 +59,9 @@ $sidebarLogo = !empty($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] :
     <a href="kelola-faq.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'kelola-faq.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
       <iconify-icon icon="lucide:help-circle"></iconify-icon> Kelola FAQ
     </a>
+    <a href="kelola-testimoni.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'kelola-testimoni.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
+      <iconify-icon icon="lucide:message-square-heart"></iconify-icon> Kelola Testimoni
+    </a>
     <a href="edit-kontak.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'edit-kontak.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
       <iconify-icon icon="lucide:phone"></iconify-icon> Edit Kontak
     </a>
@@ -64,6 +70,9 @@ $sidebarLogo = !empty($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] :
     </a>
     <a href="kelola-surat.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'kelola-surat.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
       <iconify-icon icon="lucide:mail"></iconify-icon> Kelola Surat
+    </a>
+    <a href="ubah-akun.php" class="flex items-center gap-3 px-4 py-3 <?php echo $current_page == 'ubah-akun.php' ? 'bg-slate-700' : 'hover:bg-white/5 text-white/70 hover:text-white'; ?> rounded text-sm transition-colors">
+      <iconify-icon icon="lucide:settings"></iconify-icon> Ubah Username & Password
     </a>
   </nav>
   <div class="p-4 border-t border-white/10">

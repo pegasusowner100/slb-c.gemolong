@@ -1,21 +1,105 @@
 <?php
+define('ADMIN_PAGE', true);
+
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Guru & Staff — SLB-C YPSLB Gemolong";
+$title = "Kelola Guru & Staff — SLB BC KARYA SEJAHTERA";
 $page_title = "Kelola Guru";
-$success = '';
-$error = '';
 
 // Handle search query
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
+// Helper function to load guru list
+function loadGuruList($search_query, &$error) {
+    $guru_list = [];
+    global $supabaseConnected;
+    if ($supabaseConnected) {
+        $filters = ['order' => 'urutan.asc'];
+        if (!empty($search_query)) {
+            $filters['or'] = "(nama.ilike.%$search_query%,nip.ilike.%$search_query%,jabatan.ilike.%$search_query%,mapel.ilike.%$search_query%)";
+        }
+        $guruResult = supabaseSelect('guru', $filters);
+        if (!$guruResult['success']) {
+            // Jika kolom urutan belum ada atau query gagal, fallback ke created_at
+            $filters = ['order' => 'created_at.asc'];
+            if (!empty($search_query)) {
+                $filters['or'] = "(nama.ilike.%$search_query%,nip.ilike.%$search_query%,jabatan.ilike.%$search_query%,mapel.ilike.%$search_query%)";
+            }
+            $guruResult = supabaseSelect('guru', $filters);
+        }
+        if (!$guruResult['success']) {
+            // Jika masih gagal, fallback ke query tanpa order
+            $filters = [];
+            if (!empty($search_query)) {
+                $filters['or'] = "(nama.ilike.%$search_query%,nip.ilike.%$search_query%,jabatan.ilike.%$search_query%,mapel.ilike.%$search_query%)";
+            }
+            $guruResult = supabaseSelect('guru', $filters);
+        }
+        if ($guruResult['success']) {
+            $guru_list = $guruResult['data'];
+        } elseif (empty($error)) {
+            $error = 'Gagal memuat data guru dari database.';
+        }
+    }
+    return $guru_list;
+}
+
+// Initial load of guru list
+$guru_list = loadGuruList($search_query, $error);
+$no_urut = 1;
+
+// Handle 1-Click Input SDM
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_sdm_1klik'])) {
+    if (!$supabaseConnected) {
+        $_SESSION['error'] = 'Gagal menyimpan: Supabase tidak terhubung!';
+    } else {
+        $data = [
+          'nama' => 'Guru Baru',
+          'nip' => '',
+          'jabatan' => 'Guru',
+          'mapel' => '',
+          'foto' => 'https://i.pravatar.cc/150'
+        ];
+        if (function_exists('supabaseHasColumn') && supabaseHasColumn('guru', 'urutan')) {
+          $data['urutan'] = count($guru_list) + 1;
+        }
+        $result = supabaseInsert('guru', $data);
+        if (!$result['success']) {
+          $errStr = strtolower($result['error'] ?? json_encode($result));
+          if (strpos($errStr, 'urutan') !== false || strpos($errStr, "could not find the 'urutan'") !== false || strpos($errStr, 'column') !== false) {
+            $dataNoUrutan = $data;
+            if (isset($dataNoUrutan['urutan'])) unset($dataNoUrutan['urutan']);
+            $retry = supabaseInsert('guru', $dataNoUrutan);
+            if ($retry['success']) {
+              $result = $retry;
+              $_SESSION['success'] = 'SDM berhasil ditambahkan! (kolom urutan tidak tersedia di database)';
+            } else {
+              $result = $retry;
+            }
+          }
+        }
+        if ($result['success']) {
+            $_SESSION['success'] = $_SESSION['success'] ?? 'SDM berhasil ditambahkan dengan 1 klik!';
+        } else {
+            $_SESSION['error'] = 'Gagal menambahkan SDM: ' . ($result['error'] ?? 'Unknown error');
+        }
+    }
+    // Redirect to avoid form resubmission
+    $redirectUrl = 'kelola-guru.php';
+    if (!empty($search_query)) {
+        $redirectUrl .= '?search=' . urlencode($search_query);
+    }
+    header('Location: ' . $redirectUrl);
+    exit;
+}
+
 // Handle Add Guru
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_guru'])) {
     if (!$supabaseConnected) {
-        $error = 'Gagal menyimpan: Supabase tidak terhubung!';
+        $_SESSION['error'] = 'Gagal menyimpan: Supabase tidak terhubung!';
     } else {
         $foto = 'https://i.pravatar.cc/150'; // Default
         
@@ -25,31 +109,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_guru'])) {
             if ($uploadResult['success']) {
                 $foto = $uploadResult['url'];
             } elseif (!isset($uploadResult['skip_upload'])) {
-                $error = 'Gagal upload gambar: ' . ($uploadResult['error'] ?? 'Unknown error');
+                $_SESSION['error'] = 'Gagal upload gambar: ' . ($uploadResult['error'] ?? 'Unknown error');
             }
         }
         
+        // Hanya sertakan kolom `urutan` jika kolom benar-benar ada di schema Supabase
         $data = [
-            'nama' => $_POST['nama'],
-            'nip' => $_POST['nip'],
-            'jabatan' => $_POST['jabatan'],
+          'nama' => $_POST['nama'],
+          'nip' => $_POST['nip'],
+          'jabatan' => $_POST['jabatan'],
           'mapel' => $_POST['mapel'],
-          'urutan' => isset($_POST['urutan']) ? intval($_POST['urutan']) : 0,
-            'foto' => $foto
+          'foto' => $foto
         ];
+        if (function_exists('supabaseHasColumn') && supabaseHasColumn('guru', 'urutan')) {
+          $data['urutan'] = isset($_POST['urutan']) ? intval($_POST['urutan']) : 0;
+        }
         $result = supabaseInsert('guru', $data);
+        if (!$result['success']) {
+          $errStr = strtolower($result['error'] ?? json_encode($result));
+          if (strpos($errStr, 'urutan') !== false || strpos($errStr, "could not find the 'urutan'") !== false || strpos($errStr, 'column') !== false) {
+            $dataNoUrutan = $data;
+            if (isset($dataNoUrutan['urutan'])) unset($dataNoUrutan['urutan']);
+            $retry = supabaseInsert('guru', $dataNoUrutan);
+            if ($retry['success']) {
+              $result = $retry;
+              $_SESSION['success'] = 'Guru berhasil ditambahkan! (kolom urutan tidak tersedia di database)';
+            } else {
+              $result = $retry;
+            }
+          }
+        }
         if ($result['success']) {
-            $success = 'Guru berhasil ditambahkan!';
+            $_SESSION['success'] = $_SESSION['success'] ?? 'Guru berhasil ditambahkan!';
         } else {
-            $error = 'Gagal menambahkan guru!';
+            $_SESSION['error'] = 'Gagal menambahkan guru: ' . ($result['error'] ?? 'Unknown error');
         }
     }
+    // Redirect to avoid form resubmission
+    $redirectUrl = 'kelola-guru.php';
+    if (!empty($search_query)) {
+        $redirectUrl .= '?search=' . urlencode($search_query);
+    }
+    header('Location: ' . $redirectUrl);
+    exit;
 }
 
 // Handle Edit Guru
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_guru'])) {
     if (!$supabaseConnected) {
-        $error = 'Gagal menyimpan: Supabase tidak terhubung!';
+        $_SESSION['error'] = 'Gagal menyimpan: Supabase tidak terhubung!';
     } else {
         $id = $_POST['id'];
         $currentData = [];
@@ -65,72 +173,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_guru'])) {
             if ($uploadResult['success']) {
                 $foto = $uploadResult['url'];
             } elseif (!isset($uploadResult['skip_upload'])) {
-                $error = 'Gagal upload gambar: ' . ($uploadResult['error'] ?? 'Unknown error');
+                $_SESSION['error'] = 'Gagal upload gambar: ' . ($uploadResult['error'] ?? 'Unknown error');
             }
         }
         
+        // Hanya sertakan `urutan` jika tersedia
         $data = [
           'nama' => $_POST['nama'],
           'nip' => $_POST['nip'],
           'jabatan' => $_POST['jabatan'],
           'mapel' => $_POST['mapel'],
-          'urutan' => isset($_POST['urutan']) ? intval($_POST['urutan']) : 0,
           'foto' => $foto
         ];
+        if (function_exists('supabaseHasColumn') && supabaseHasColumn('guru', 'urutan')) {
+          $data['urutan'] = isset($_POST['urutan']) ? intval($_POST['urutan']) : 0;
+        }
+
         $result = supabaseUpdate('guru', $data, $id);
+        // Jika gagal dan server menyebutkan masalah schema urutan, coba ulang tanpa urutan
+        if (!$result['success']) {
+          $errStr = strtolower($result['error'] ?? json_encode($result));
+          if (strpos($errStr, 'urutan') !== false || strpos($errStr, "could not find the 'urutan'") !== false || strpos($errStr, 'column') !== false) {
+            $dataNoUrutan = $data;
+            if (isset($dataNoUrutan['urutan'])) unset($dataNoUrutan['urutan']);
+            $retry = supabaseUpdate('guru', $dataNoUrutan, $id);
+            if ($retry['success']) {
+              $result = $retry;
+              $_SESSION['success'] = 'Guru berhasil diperbarui! (kolom urutan tidak tersedia di database)';
+            } else {
+              $result = $retry;
+            }
+          }
+        }
         if ($result['success']) {
-            $success = 'Guru berhasil diperbarui!';
+            $_SESSION['success'] = $_SESSION['success'] ?? 'Guru berhasil diperbarui!';
         } else {
-            $error = 'Gagal memperbarui guru!';
+            $_SESSION['error'] = 'Gagal memperbarui guru: ' . ($result['error'] ?? 'Unknown error');
         }
     }
+    // Redirect to avoid form resubmission
+    $redirectUrl = 'kelola-guru.php';
+    if (!empty($search_query)) {
+        $redirectUrl .= '?search=' . urlencode($search_query);
+    }
+    header('Location: ' . $redirectUrl);
+    exit;
 }
 
 // Handle Delete Guru
 if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     if (!$supabaseConnected) {
-        $error = 'Gagal menghapus: Supabase tidak terhubung!';
+        $_SESSION['error'] = 'Gagal menghapus: Supabase tidak terhubung!';
     } else {
         $result = supabaseDelete('guru', $_GET['delete']);
         if ($result['success']) {
-            $success = 'Guru berhasil dihapus!';
+            $_SESSION['success'] = 'Guru berhasil dihapus!';
         } else {
-            $error = 'Gagal menghapus guru!';
+            $_SESSION['error'] = 'Gagal menghapus guru!';
         }
     }
+    // Redirect to avoid form resubmission
+    $redirectUrl = 'kelola-guru.php';
+    if (!empty($search_query)) {
+        $redirectUrl .= '?search=' . urlencode($search_query);
+    }
+    header('Location: ' . $redirectUrl);
+    exit;
 }
 
-// Get All Guru with search
-$guru_list = [];
-if ($supabaseConnected) {
-    $filters = ['order' => 'urutan.asc'];
-    if (!empty($search_query)) {
-        $filters['or'] = "(nama.ilike.%$search_query%,nip.ilike.%$search_query%,jabatan.ilike.%$search_query%,mapel.ilike.%$search_query%)";
-    }
-    $guruResult = supabaseSelect('guru', $filters);
-    if (!$guruResult['success']) {
-        // Jika kolom urutan belum ada atau query gagal, fallback ke created_at
-        $filters = ['order' => 'created_at.asc'];
-        if (!empty($search_query)) {
-            $filters['or'] = "(nama.ilike.%$search_query%,nip.ilike.%$search_query%,jabatan.ilike.%$search_query%,mapel.ilike.%$search_query%)";
-        }
-        $guruResult = supabaseSelect('guru', $filters);
-    }
-    if (!$guruResult['success']) {
-        // Jika masih gagal, fallback ke query tanpa order
-        $filters = [];
-        if (!empty($search_query)) {
-            $filters['or'] = "(nama.ilike.%$search_query%,nip.ilike.%$search_query%,jabatan.ilike.%$search_query%,mapel.ilike.%$search_query%)";
-        }
-        $guruResult = supabaseSelect('guru', $filters);
-    }
-    if ($guruResult['success']) {
-        $guru_list = $guruResult['data'];
-    } elseif (empty($error)) {
-        $error = 'Gagal memuat data guru dari database.';
-    }
+// Retrieve flash messages from session
+$success = '';
+$error = '';
+if (isset($_SESSION['success'])) {
+    $success = $_SESSION['success'];
+    unset($_SESSION['success']);
 }
-$no_urut = 1;
+if (isset($_SESSION['error'])) {
+    $error = $_SESSION['error'];
+    unset($_SESSION['error']);
+}
 
 include 'components/head.php';
 include 'components/sidebar.php';
@@ -174,6 +295,11 @@ include 'components/sidebar.php';
                   <iconify-icon icon="lucide:table" class="inline mr-1"></iconify-icon> Tabel
                 </button>
               </div>
+              <form method="POST" style="display: inline;">
+                <button type="submit" name="tambah_sdm_1klik" <?php echo !$supabaseConnected ? 'disabled' : ''; ?> class="bg-orange-500 text-white text-xs font-bold px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
+                  <iconify-icon icon="lucide:user-plus"></iconify-icon> Input SDM 1 Klik
+                </button>
+              </form>
               <button onclick="document.getElementById('modalGuru').classList.remove('hidden')" <?php echo !$supabaseConnected ? 'disabled' : ''; ?> class="bg-[#3E6B4E] text-white text-xs font-bold px-6 py-3 rounded-lg hover:bg-[#2F5B41] transition-colors uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
                 <iconify-icon icon="lucide:plus"></iconify-icon> Tambah Guru
               </button>
@@ -326,7 +452,13 @@ include 'components/sidebar.php';
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Jabatan</label>
-              <input type="text" name="jabatan" value="Guru" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+              <select name="jabatan" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <option value="Kepala Sekolah">Kepala Sekolah</option>
+                <option value="Wakil Kepala Sekolah">Wakil Kepala Sekolah</option>
+                <option value="Guru">Guru</option>
+                <option value="Tenaga pendidik">Tenaga pendidik</option>
+                <option value="Tenaga Teknis">Tenaga Teknis</option>
+              </select>
             </div>
             <div>
               <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Mapel (Opsional)</label>
@@ -375,7 +507,13 @@ include 'components/sidebar.php';
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Jabatan</label>
-              <input type="text" name="jabatan" id="editGuruJabatan" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+              <select name="jabatan" id="editGuruJabatan" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <option value="Kepala Sekolah">Kepala Sekolah</option>
+                <option value="Wakil Kepala Sekolah">Wakil Kepala Sekolah</option>
+                <option value="Guru">Guru</option>
+                <option value="Tenaga pendidik">Tenaga pendidik</option>
+                <option value="Tenaga Teknis">Tenaga Teknis</option>
+              </select>
             </div>
             <div>
               <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Mapel (Opsional)</label>

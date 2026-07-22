@@ -1,10 +1,11 @@
 
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
 
-$title = "Kelola PPDB — SLB-C YPSLB Gemolong";
+$title = "Kelola PPDB — SLB BC KARYA SEJAHTERA";
 $page_title = "Kelola PPDB";
 $success = '';
 $error = '';
@@ -108,6 +109,22 @@ include 'components/sidebar.php';
             PERINGATAN: Supabase tidak terhubung! Perubahan tidak dapat disimpan.
           </div>
         <?php endif; ?>
+
+        <!-- PANDUAN PENGISIAN / KELOLA PPDB -->
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 shadow-sm flex items-start gap-4 mb-8">
+            <div class="p-3 bg-emerald-600 text-white rounded-xl shadow-sm">
+                <iconify-icon icon="lucide:info" class="text-2xl flex-shrink-0"></iconify-icon>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-bold text-gray-800 text-base mb-1">Panduan Pengelolaan PPDB (Pendaftaran Peserta Didik Baru)</h4>
+                <p class="text-sm text-gray-600 mb-3">Ikuti petunjuk pengelolaan pendaftar baru berikut:</p>
+                <ul class="list-disc list-inside text-sm text-gray-700 space-y-2">
+                    <li><strong>Melihat Detail Pendaftar:</strong> Klik tombol ikon mata (Detail) pada kolom aksi tabel untuk meninjau berkas pendaftaran calon murid secara lengkap.</li>
+                    <li><strong>Memproses Status Calon Murid:</strong> Gunakan menu pilihan dropdown status pendaftaran (Pending, Diterima, Ditolak) pada baris pendaftar bersangkutan. Sistem akan langsung memperbarui status calon murid secara *real-time*.</li>
+                    <li><strong>Menghapus Pendaftar:</strong> Jika terdapat data ganda atau tidak sah, Anda dapat menggunakan tombol hapus (ikon tempat sampah) untuk menghapus data pendaftar dari sistem.</li>
+                </ul>
+            </div>
+        </div>
 
         <div class="mb-8">
           <div class="flex justify-between items-center mb-6">

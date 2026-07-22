@@ -1,7 +1,7 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Siswa — SLB-C YPSLB Gemolong";
+$title = "Siswa — SLB BC KARYA SEJAHTERA";
 
 // Ambil data siswa (hanya yang aktif)
 $all_siswa = [];
@@ -30,6 +30,12 @@ include '../components/head.php';
   <section id="siswa" class="py-24">
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Siswa</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Siswa Berprestasi</h2>
+          </div>
+        </div>
         <?php if (empty($all_siswa)): ?>
           <div class="text-center py-16">
             <p class="text-brand-muted">Belum ada data siswa.</p>

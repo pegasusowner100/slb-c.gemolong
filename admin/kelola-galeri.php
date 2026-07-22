@@ -1,10 +1,11 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Galeri — " . SITE_NAME;
+$title = "Kelola Galeri — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Kelola Galeri";
 $success = '';
 $error = '';
@@ -242,7 +243,7 @@ include 'components/sidebar.php';
                         if ($isVideo):
                         ?>
                           <div class="relative overflow-hidden">
-                            <video class="w-full h-48 object-cover transition-transform duration-500 hover:scale-105" muted>
+                            <video class="w-full h-48 object-cover" muted>
                               <source src="<?php echo htmlspecialchars($fileUrl); ?>" type="video/mp4">
                             </video>
                             <div class="absolute top-4 left-4">

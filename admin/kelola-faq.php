@@ -1,9 +1,10 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
 
-$title = "Kelola FAQ — " . SITE_NAME;
+$title = "Kelola FAQ — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Kelola FAQ";
 $success = '';
 $error = '';
@@ -71,11 +72,16 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     } else {
         $result = supabaseDelete('faq', $_GET['delete']);
         if ($result['success']) {
-            $success = 'FAQ berhasil dihapus!';
+            header('Location: kelola-faq.php?success=deleted');
+            exit;
         } else {
             $error = 'Gagal menghapus FAQ! ' . ($result['error'] ?? '');
         }
     }
+}
+
+if (isset($_GET['success']) && $_GET['success'] === 'deleted') {
+    $success = 'FAQ berhasil dihapus!';
 }
 
 // Handle search query
@@ -173,7 +179,12 @@ include 'components/sidebar.php';
                 <p class="text-sm text-gray-500 line-clamp-4 mb-4"><?php echo htmlspecialchars(strip_tags($faq['jawaban'] ?? '')); ?></p>
                 <div class="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div class="flex items-center gap-2">
-                    <button onclick="openEditFAQModal('<?php echo htmlspecialchars($faq['id']); ?>', '<?php echo addslashes(htmlspecialchars($faq['pertanyaan'])); ?>', '<?php echo addslashes(htmlspecialchars($faq['jawaban'] ?? '')); ?>', '<?php echo htmlspecialchars($faq['urutan'] ?? 0); ?>', '<?php echo htmlspecialchars($faq['status'] ?? 'published'); ?>')" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all">
+                    <button class="btn-edit-faq p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                            data-id="<?php echo htmlspecialchars($faq['id']); ?>"
+                            data-pertanyaan="<?php echo htmlspecialchars($faq['pertanyaan']); ?>"
+                            data-jawaban="<?php echo htmlspecialchars($faq['jawaban'] ?? ''); ?>"
+                            data-urutan="<?php echo htmlspecialchars($faq['urutan'] ?? 0); ?>"
+                            data-status="<?php echo htmlspecialchars($faq['status'] ?? 'published'); ?>">
                       <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
                     </button>
                     <a href="?delete=<?php echo $faq['id']; ?><?php echo $search ? '&search=' . urlencode($search) : ''; ?>" onclick="return confirm('Yakin ingin menghapus FAQ ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all">
@@ -219,7 +230,12 @@ include 'components/sidebar.php';
                       </td>
                       <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
-                          <button onclick="openEditFAQModal('<?php echo htmlspecialchars($faq['id']); ?>', '<?php echo addslashes(htmlspecialchars($faq['pertanyaan'])); ?>', '<?php echo addslashes(htmlspecialchars($faq['jawaban'] ?? '')); ?>', '<?php echo htmlspecialchars($faq['urutan'] ?? 0); ?>', '<?php echo htmlspecialchars($faq['status'] ?? 'published'); ?>')" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all">
+                          <button class="btn-edit-faq p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                                  data-id="<?php echo htmlspecialchars($faq['id']); ?>"
+                                  data-pertanyaan="<?php echo htmlspecialchars($faq['pertanyaan']); ?>"
+                                  data-jawaban="<?php echo htmlspecialchars($faq['jawaban'] ?? ''); ?>"
+                                  data-urutan="<?php echo htmlspecialchars($faq['urutan'] ?? 0); ?>"
+                                  data-status="<?php echo htmlspecialchars($faq['status'] ?? 'published'); ?>">
                             <iconify-icon icon="lucide:edit"></iconify-icon>
                           </button>
                           <a href="?delete=<?php echo $faq['id']; ?><?php echo $search ? '&search=' . urlencode($search) : ''; ?>" onclick="return confirm('Yakin ingin menghapus FAQ ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all">
@@ -327,14 +343,28 @@ include 'components/sidebar.php';
   </div>
 
   <script>
-    function openEditFAQModal(id, pertanyaan, jawaban, urutan, status) {
-      document.getElementById('edit_faq_id').value = id;
-      document.getElementById('edit_pertanyaan').value = pertanyaan;
-      document.getElementById('edit_jawaban').value = jawaban;
-      document.getElementById('edit_urutan').value = urutan;
-      document.getElementById('edit_status').value = status;
-      document.getElementById('modalEditFAQ').classList.remove('hidden');
-    }
+    // Initialize edit button listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.btn-edit-faq').forEach(button => {
+        button.addEventListener('click', function() {
+          const id = this.getAttribute('data-id');
+          const pertanyaan = this.getAttribute('data-pertanyaan');
+          const jawaban = this.getAttribute('data-jawaban');
+          const urutan = this.getAttribute('data-urutan');
+          const status = this.getAttribute('data-status');
+          
+          document.getElementById('edit_faq_id').value = id;
+          document.getElementById('edit_pertanyaan').value = pertanyaan;
+          document.getElementById('edit_jawaban').value = jawaban;
+          document.getElementById('edit_urutan').value = urutan;
+          document.getElementById('edit_status').value = status;
+          document.getElementById('modalEditFAQ').classList.remove('hidden');
+        });
+      });
+      
+      const savedView = localStorage.getItem('faqView') || 'table';
+      setView(savedView);
+    });
 
     function setView(view) {
       const gridView = document.getElementById('grid-view');
@@ -355,12 +385,6 @@ include 'components/sidebar.php';
       }
       localStorage.setItem('faqView', view);
     }
-
-    // Initialize view
-    document.addEventListener('DOMContentLoaded', function() {
-      const savedView = localStorage.getItem('faqView') || 'table';
-      setView(savedView);
-    });
   </script>
 </body>
 </html>

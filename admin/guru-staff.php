@@ -1,42 +1,14 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
 
-$title = "Data Guru & Staff — SMA Negeri 1 Nusantara";
+$title = "Data Guru & Staff — SLB BC KARYA SEJAHTERA";
 $page_title = "Guru & Staff";
 
-// Dummy data guru
-$guru_list = [
-    [
-        'nama' => 'Drs. Ahmad Sudrajat, M.Pd',
-        'nip' => '19700101 199501 1 001',
-        'jabatan' => 'Kepala Sekolah',
-        'mapel' => '-',
-        'foto' => 'https://i.pravatar.cc/150?u=1'
-    ],
-    [
-        'nama' => 'Dra. Siti Aminah, M.Si',
-        'nip' => '19750515 200012 2 002',
-        'jabatan' => 'Wakil Kepala Sekolah',
-        'mapel' => 'Matematika',
-        'foto' => 'https://i.pravatar.cc/150?u=2'
-    ],
-    [
-        'nama' => 'Budi Santoso, S.Pd',
-        'nip' => '19801020 200503 1 003',
-        'jabatan' => 'Guru',
-        'mapel' => 'Bahasa Indonesia',
-        'foto' => 'https://i.pravatar.cc/150?u=3'
-    ],
-    [
-        'nama' => 'Dewi Lestari, S.Pd',
-        'nip' => '19850312 201007 2 004',
-        'jabatan' => 'Guru',
-        'mapel' => 'Bahasa Inggris',
-        'foto' => 'https://i.pravatar.cc/150?u=4'
-    ]
-];
+// Data guru akan diambil dari database
+$guru_list = [];
 
 include 'components/head.php';
 include 'components/sidebar.php';

@@ -16,4 +16,5 @@ return array (
   'anggaran' => true,
   'layanan' => true,
   'faq' => true,
+  'testimoni' => true,
 );

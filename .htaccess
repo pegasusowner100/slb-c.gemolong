@@ -1,8 +1,78 @@
-
 DirectoryIndex index.php
 
+# Aktifkan mod_rewrite jika diperlukan
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Use the subfolder base for this local deployment
+    RewriteBase /web_sekolah_KS_002/
+
+    # Redirect direct .php requests to clean URL without extension (preserve base)
+    RewriteCond %{THE_REQUEST} \s/([^\s?]+)\.php[?\s] [NC]
+    RewriteRule ^ /%1 [R=301,L]
+
+    # Rewrite clean URLs to their .php files when the file does not exist on disk
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !\.[^/]+$
+    RewriteRule ^(.+)$ $1.php [L,QSA]
+</IfModule>
+
+# Proteksi file dan folder sensitif
+<IfModule mod_authz_core.c>
+    <Files "config.php">
+        Require all denied
+    </Files>
+    <Files ".env">
+        Require all denied
+    </Files>
+    <FilesMatch "\.(sql|conf|json|xml)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <Files "config.php">
+        Order allow,deny
+        Deny from all
+    </Files>
+    <Files ".env">
+        Order allow,deny
+        Deny from all
+    </Files>
+    <FilesMatch "\.(sql|conf|json|xml)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+# Proteksi folder includes/ sql/ scripts/ via rewrite rules
+<IfModule mod_rewrite.c>
+    RewriteRule ^(?:includes|sql|scripts)(/.*)?$ - [F,L,NC]
+</IfModule>
+
+# Jangan listing direktori
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# ============================================
+# PHP CONFIGURATION
+# ============================================
+
 # Batasi Upload
-php_value upload_max_filesize 100M
-php_value post_max_size 100M
-php_value max_execution_time 300
-php_value max_input_time 300
+# php_value upload_max_filesize 100M
+# php_value post_max_size 100M
+# php_value max_execution_time 300
+# php_value max_input_time 300
+
+# Hide PHP version
+# php_flag expose_php Off
+
+# Force HTTPS but allow Let's Encrypt challenge and local HTTP access
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP_HOST} !^localhost$ [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1$ [NC]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>

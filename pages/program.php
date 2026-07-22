@@ -1,7 +1,9 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Program Unggulan — " . SITE_NAME;
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/program');
+$title = "Program Unggulan — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 
 // Fetch programs
 $programs = [];
@@ -30,7 +32,13 @@ include '../components/head.php';
   <section id="program" class="py-24">
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Program</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Program Unggulan</h2>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8">
           <?php foreach ($programs as $index => $prog): ?>
             <div class="group relative overflow-hidden rounded-lg shadow-lg h-96 fade-in-up delay-<?= ($index % 5 + 1) * 100 ?>">
               <img src="<?php echo htmlspecialchars($prog['gambar'] ?? 'https://picsum.photos/seed/program-default/600/400'); ?>" alt="<?php echo htmlspecialchars($prog['nama'] ?? ''); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">

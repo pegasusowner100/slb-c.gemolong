@@ -1,52 +1,156 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_once '../includes/supabase_storage.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Pengumuman";
+$title = "Kelola Pengumuman — SLB BC KARYA SEJAHTERA";
 $page_title = "Kelola Pengumuman";
-$success = '';
-$error = '';
+$success = $_SESSION['success'] ?? '';
+$error = $_SESSION['error'] ?? '';
+unset($_SESSION['success'], $_SESSION['error']);
+$uploadMaxSize = ini_get('upload_max_filesize') ?: 'sesuai konfigurasi server';
+
+function pengumumanUploadErrorMessage($code) {
+    switch ((int) $code) {
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            return 'Ukuran file melebihi batas upload server.';
+        case UPLOAD_ERR_PARTIAL:
+            return 'File hanya terupload sebagian. Coba unggah ulang.';
+        case UPLOAD_ERR_NO_TMP_DIR:
+            return 'Folder sementara upload tidak tersedia di server.';
+        case UPLOAD_ERR_CANT_WRITE:
+            return 'Server gagal menulis file upload.';
+        case UPLOAD_ERR_EXTENSION:
+            return 'Upload dihentikan oleh ekstensi PHP.';
+        default:
+            return 'Upload file gagal: kode error ' . $code;
+    }
+}
+
+function isFileUrlAccessible($url) {
+    if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+        return false;
+    }
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_NOBODY, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    return $httpCode >= 200 && $httpCode < 400;
+}
+
+function uploadPengumumanPdf($file) {
+    if (!isset($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return [
+            'success' => true,
+            'url' => '',
+            'file_name' => '',
+            'no_file' => true
+        ];
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        return [
+            'success' => false,
+            'url' => '',
+            'file_name' => '',
+            'error' => pengumumanUploadErrorMessage($file['error'] ?? 'unknown')
+        ];
+    }
+
+    $extension = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
+    if ($extension !== 'pdf') {
+        return [
+            'success' => false,
+            'url' => '',
+            'file_name' => '',
+            'error' => 'File pengumuman harus berupa PDF.'
+        ];
+    }
+
+    $fileName = $file['name'] ?? '';
+    $lastError = '';
+
+    if (function_exists('uploadToSupabaseStorage')) {
+        $supabaseResult = uploadToSupabaseStorage($file, 'pengumuman');
+        if ($supabaseResult['success']) {
+            return [
+                'success' => true,
+                'url' => $supabaseResult['url'],
+                'file_name' => $fileName,
+                'storage' => 'supabase'
+            ];
+        }
+        $lastError = 'Supabase Storage: ' . ($supabaseResult['error'] ?? 'Upload gagal.');
+    } else {
+        $lastError = 'Supabase Storage tidak tersedia.';
+    }
+
+    return [
+        'success' => false,
+        'url' => '',
+        'file_name' => '',
+        'error' => $lastError !== '' ? $lastError : 'Upload PDF gagal.'
+    ];
+}
+
+function pengumumanUploadTimestamp($item) {
+    $date = $item['created_at'] ?? $item['updated_at'] ?? $item['tgl'] ?? '';
+    $time = $date ? strtotime($date) : false;
+    return $time ?: 0;
+}
 
 // --- Handle Tambah Pengumuman ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_pengumuman'])) {
     if (!$supabaseConnected) {
         $error = 'Gagal menyimpan: Supabase tidak terhubung!';
     } else {
-        $no = trim($_POST['no']);
-        $judul = trim($_POST['judul']);
-        $konten = trim($_POST['konten']);
-        $sumber = trim($_POST['sumber']);
-        $tgl = $_POST['tgl'];
-        $prioritas = $_POST['prioritas'];
-        $status = $_POST['status'];
+        $no = trim($_POST['no'] ?? '');
+        $judul = trim($_POST['judul'] ?? '');
+        $konten = trim($_POST['konten'] ?? '');
+        $sumber = trim($_POST['sumber'] ?? '');
+        $tgl = $_POST['tgl'] ?? '';
+        $prioritas = $_POST['prioritas'] ?? 'Normal';
+        $status = $_POST['status'] ?? 'published';
 
-        $file_pdf = '';
-        if (isset($_FILES['file_pdf']) && $_FILES['file_pdf']['error'] === UPLOAD_ERR_OK) {
-            $uploadResult = uploadToSupabaseStorage($_FILES['file_pdf'], CLOUDINARY_FOLDER);
-            if ($uploadResult['success']) {
-                $file_pdf = $uploadResult['url'];
-            }
-        }
+        $uploadResult = uploadPengumumanPdf($_FILES['file_pdf'] ?? null);
 
-        $data = [
-            'no' => $no,
-            'judul' => $judul,
-            'konten' => $konten,
-            'sumber' => $sumber,
-            'tgl' => $tgl,
-            'prioritas' => $prioritas,
-            'pdf' => $file_pdf,
-            'file_name' => $_FILES['file_pdf']['name'] ?? '',
-            'status' => $status
-        ];
-
-        $response = supabaseInsert('pengumuman', $data);
-        if ($response['success']) {
-            $success = 'Pengumuman berhasil ditambahkan!';
+        if (!$uploadResult['success']) {
+            $error = $uploadResult['error'] ?? 'Gagal upload PDF.';
         } else {
-            $error = 'Gagal menyimpan pengumuman!';
+            $data = [
+                'no' => $no,
+                'judul' => $judul,
+                'konten' => $konten,
+                'sumber' => $sumber,
+                'tgl' => $tgl,
+                'prioritas' => $prioritas,
+                'pdf' => $uploadResult['url'],
+                'file_name' => $uploadResult['file_name'],
+                'status' => $status
+            ];
+
+            $response = supabaseInsert('pengumuman', $data);
+            if ($response['success']) {
+                $storageInfo = !empty($uploadResult['storage']) ? ' File tersimpan di ' . $uploadResult['storage'] . '.' : '';
+                $fallbackInfo = !empty($uploadResult['fallback_reason']) ? ' ' . $uploadResult['fallback_reason'] . '.' : '';
+                $_SESSION['success'] = 'Pengumuman berhasil ditambahkan!' . $storageInfo . $fallbackInfo;
+                header('Location: kelola-pengumuman.php');
+                exit;
+            } else {
+                $error = 'Gagal menyimpan pengumuman: ' . ($response['error'] ?? 'Unknown error');
+            }
         }
     }
 }
@@ -56,40 +160,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_pengumuman'])) {
     if (!$supabaseConnected) {
         $error = 'Gagal menyimpan: Supabase tidak terhubung!';
     } else {
-        $id = trim($_POST['id']);
-        $no = trim($_POST['no']);
-        $judul = trim($_POST['judul']);
-        $konten = trim($_POST['konten']);
-        $sumber = trim($_POST['sumber']);
-        $tgl = $_POST['tgl'];
-        $prioritas = $_POST['prioritas'];
-        $status = $_POST['status'];
+        $id = trim($_POST['id'] ?? '');
+        $no = trim($_POST['no'] ?? '');
+        $judul = trim($_POST['judul'] ?? '');
+        $konten = trim($_POST['konten'] ?? '');
+        $sumber = trim($_POST['sumber'] ?? '');
+        $tgl = $_POST['tgl'] ?? '';
+        $prioritas = $_POST['prioritas'] ?? 'Normal';
+        $status = $_POST['status'] ?? 'published';
 
-        $file_pdf = '';
-        if (isset($_FILES['file_pdf']) && $_FILES['file_pdf']['error'] === UPLOAD_ERR_OK) {
-            $uploadResult = uploadToSupabaseStorage($_FILES['file_pdf'], CLOUDINARY_FOLDER);
-            if ($uploadResult['success']) {
-                $file_pdf = $uploadResult['url'];
+        $uploadResult = uploadPengumumanPdf($_FILES['file_pdf'] ?? null);
+
+        if (!$uploadResult['success']) {
+            $error = $uploadResult['error'] ?? 'Gagal upload PDF.';
+        } else {
+            $file_pdf = $uploadResult['url'] ?: ($_POST['existing_pdf'] ?? '');
+
+            $data = [
+                'no' => $no,
+                'judul' => $judul,
+                'konten' => $konten,
+                'sumber' => $sumber,
+                'tgl' => $tgl,
+                'prioritas' => $prioritas,
+                'pdf' => $file_pdf,
+                'status' => $status
+            ];
+
+            if (!empty($uploadResult['file_name'])) {
+                $data['file_name'] = $uploadResult['file_name'];
             }
-        } else if (isset($_POST['existing_pdf']) && !empty($_POST['existing_pdf'])) {
-            $file_pdf = $_POST['existing_pdf'];
+
+            $response = supabaseUpdate('pengumuman', $data, $id);
+            if ($response['success']) {
+                if (!empty($uploadResult['storage'])) {
+                    $fallbackInfo = !empty($uploadResult['fallback_reason']) ? ' ' . $uploadResult['fallback_reason'] . '.' : '';
+                    $_SESSION['success'] = 'Pengumuman berhasil diperbarui! File tersimpan di ' . $uploadResult['storage'] . '.' . $fallbackInfo;
+                } elseif (!empty($file_pdf)) {
+                    $_SESSION['success'] = 'Pengumuman berhasil diperbarui. Tidak ada file PDF baru yang diterima server; PDF lama tetap dipakai.';
+                } else {
+                    $_SESSION['success'] = 'Pengumuman berhasil diperbarui, tetapi belum ada file PDF yang tersimpan.';
+                }
+                header('Location: kelola-pengumuman.php');
+                exit;
+            } else {
+                $error = 'Gagal memperbarui pengumuman: ' . ($response['error'] ?? 'Unknown error');
+            }
         }
-
-        $data = [
-            'no' => $no,
-            'judul' => $judul,
-            'konten' => $konten,
-            'sumber' => $sumber,
-            'tgl' => $tgl,
-            'prioritas' => $prioritas,
-            'pdf' => $file_pdf,
-            'file_name' => $_FILES['file_pdf']['name'] ?? '',
-            'status' => $status
-        ];
-
-        $response = supabaseUpdate('pengumuman', $data, $id);
-        if ($response['success']) $success = 'Pengumuman berhasil diperbarui!';
-        else $error = 'Gagal memperbarui pengumuman!';
     }
 }
 
@@ -99,8 +216,13 @@ if (isset($_GET['hapus_pengumuman']) && !empty($_GET['hapus_pengumuman'])) {
         $error = 'Gagal menghapus: Supabase tidak terhubung!';
     } else {
         $response = supabaseDelete('pengumuman', $_GET['hapus_pengumuman']);
-        if ($response['success']) $success = 'Pengumuman berhasil dihapus!';
-        else $error = 'Gagal menghapus pengumuman!';
+        if ($response['success']) {
+            $_SESSION['success'] = 'Pengumuman berhasil dihapus!';
+        } else {
+            $_SESSION['error'] = 'Gagal menghapus pengumuman!';
+        }
+        header('Location: kelola-pengumuman.php');
+        exit;
     }
 }
 
@@ -110,6 +232,9 @@ if ($supabaseConnected) {
     $pengumumanResult = supabaseSelect('pengumuman', ['order' => 'created_at.desc']);
     if ($pengumumanResult['success']) {
         $pengumuman = $pengumumanResult['data'];
+        usort($pengumuman, function ($a, $b) {
+            return pengumumanUploadTimestamp($b) <=> pengumumanUploadTimestamp($a);
+        });
     }
 }
 
@@ -133,13 +258,13 @@ include 'components/sidebar.php';
             <?php if ($success): ?>
                 <div class="p-4 bg-green-100 border border-green-200 text-green-700 rounded-xl flex items-center gap-3">
                     <iconify-icon icon="lucide:check-circle" class="text-xl"></iconify-icon>
-                    <?php echo $success; ?>
+                    <?php echo htmlspecialchars($success); ?>
                 </div>
             <?php endif; ?>
             <?php if ($error): ?>
                 <div class="p-4 bg-red-100 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
                     <iconify-icon icon="lucide:alert-circle" class="text-xl"></iconify-icon>
-                    <?php echo $error; ?>
+                    <?php echo htmlspecialchars($error); ?>
                 </div>
             <?php endif; ?>
 
@@ -283,14 +408,14 @@ include 'components/sidebar.php';
 <div id="modalPengumuman" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('modalPengumuman').classList.add('hidden')"></div>
     <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh]">
             <div class="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-emerald-500 to-emerald-600">
                 <h3 class="text-xl font-serif text-white">Tambah Pengumuman Baru</h3>
                 <button onclick="document.getElementById('modalPengumuman').classList.add('hidden')" class="text-white/80 hover:text-white transition-colors">
                     <iconify-icon icon="lucide:x" class="text-2xl"></iconify-icon>
                 </button>
             </div>
-            <form action="" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+            <form action="" method="POST" enctype="multipart/form-data" class="p-6 space-y-5 overflow-y-auto" style="max-height:calc(90vh - 96px);">
                 <div class="grid md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Nomor Pengumuman</label>
@@ -307,11 +432,7 @@ include 'components/sidebar.php';
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Sumber Informasi</label>
-                    <select name="sumber" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
-                        <?php foreach ($sumber_info as $s): ?>
-                            <option value="<?php echo htmlspecialchars($s['nama']); ?>"><?php echo htmlspecialchars($s['nama']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="text" name="sumber" placeholder="Masukkan sumber informasi..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Konten / Deskripsi</label>
@@ -337,7 +458,9 @@ include 'components/sidebar.php';
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">File PDF (Opsional)</label>
-                    <input type="file" name="file_pdf" accept="application/pdf" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                    <p class="text-xs text-gray-500 mb-2">Maksimal upload server: <?php echo htmlspecialchars($uploadMaxSize); ?>.</p>
+                    <input id="new-file-pdf" type="file" name="file_pdf" accept="application/pdf" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                    <div id="new-pdf-preview" class="mt-3" style="max-height:50vh; overflow:auto;"></div>
                 </div>
                 <div class="flex items-center gap-4 pt-4">
                     <button type="button" onclick="document.getElementById('modalPengumuman').classList.add('hidden')" class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all font-semibold text-sm">Batal</button>
@@ -352,14 +475,14 @@ include 'components/sidebar.php';
 <div id="modalEditPengumuman" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('modalEditPengumuman').classList.add('hidden')"></div>
     <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh]">
             <div class="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-emerald-500 to-emerald-600">
                 <h3 class="text-xl font-serif text-white">Edit Pengumuman</h3>
                 <button onclick="document.getElementById('modalEditPengumuman').classList.add('hidden')" class="text-white/80 hover:text-white transition-colors">
                     <iconify-icon icon="lucide:x" class="text-2xl"></iconify-icon>
                 </button>
             </div>
-            <form action="" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+            <form action="" method="POST" enctype="multipart/form-data" class="p-6 space-y-5 overflow-y-auto" style="max-height:calc(90vh - 96px);">
                 <input type="hidden" name="id" id="edit-id">
                 <div class="grid md:grid-cols-2 gap-5">
                     <div>
@@ -377,11 +500,7 @@ include 'components/sidebar.php';
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Sumber Informasi</label>
-                    <select name="sumber" id="edit-sumber" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
-                        <?php foreach ($sumber_info as $s): ?>
-                            <option value="<?php echo htmlspecialchars($s['nama']); ?>"><?php echo htmlspecialchars($s['nama']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="text" name="sumber" id="edit-sumber" placeholder="Masukkan sumber informasi..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">Konten / Deskripsi</label>
@@ -407,10 +526,11 @@ include 'components/sidebar.php';
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase mb-2">File PDF (Opsional)</label>
+                    <p class="text-xs text-gray-500 mb-2">Maksimal upload server: <?php echo htmlspecialchars($uploadMaxSize); ?>. Biarkan kosong jika tidak ingin mengganti PDF.</p>
                     <input type="hidden" name="existing_pdf" id="edit-existing-pdf">
-                    <input type="file" name="file_pdf" accept="application/pdf" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
-                    <div id="current-pdf" class="mt-2 text-sm text-gray-600">
-                    </div>
+                    <input id="edit-file-pdf" type="file" name="file_pdf" accept="application/pdf" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                    <div id="current-pdf" class="mt-2 text-sm text-gray-600"></div>
+                    <div id="edit-pdf-preview" class="mt-3" style="max-height:50vh; overflow:auto;"></div>
                 </div>
                 <div class="flex items-center gap-4 pt-4">
                     <button type="button" onclick="document.getElementById('modalEditPengumuman').classList.add('hidden')" class="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all font-semibold text-sm">Batal</button>
@@ -459,7 +579,10 @@ function openEdit(id, no, judul, konten, sumber, tgl, prioritas, pdf, status) {
     document.getElementById('edit-existing-pdf').value = pdf;
     
     if (pdf) {
-        document.getElementById('current-pdf').innerHTML = '<a href="' + pdf + '" target="_blank" class="text-emerald-600 hover:underline">Lihat file PDF saat ini</a>';
+        const resolvedPdf = pdf;
+        document.getElementById('current-pdf').innerHTML = '<a href="' + resolvedPdf + '" target="_blank" class="text-emerald-600 hover:underline">Lihat file PDF saat ini</a>';
+        // Render preview for existing PDF
+        try { renderPdfPreview(resolvedPdf, 'edit-pdf-preview'); } catch (e) { console.error('Preview error', e); }
     } else {
         document.getElementById('current-pdf').innerHTML = '';
     }
@@ -467,5 +590,71 @@ function openEdit(id, no, judul, konten, sumber, tgl, prioritas, pdf, status) {
     document.getElementById('modalEditPengumuman').classList.remove('hidden');
 }
 </script>
-</body>
-</html>
+
+<!-- PDF.js for admin previews -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// Configure worker
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+async function renderPdfPreview(src, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '<div class="p-4 text-xs text-slate-500">Memuat pratinjau...</div>';
+
+    let loadingTask;
+    try {
+        // If src is a File or Blob URL, pdfjs can handle it. If it's a data URL or remote URL, pass directly.
+        loadingTask = pdfjsLib.getDocument(src);
+        const pdf = await loadingTask.promise;
+        container.innerHTML = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 1.2 });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
+            img.className = 'w-full h-auto rounded-lg shadow-sm border border-slate-100 mb-3';
+            container.appendChild(img);
+            const meta = document.createElement('div');
+            meta.className = 'text-[10px] text-slate-400 mb-4';
+            meta.textContent = 'Halaman ' + i + ' dari ' + pdf.numPages;
+            container.appendChild(meta);
+        }
+    } catch (err) {
+        console.error('PDF preview failed', err);
+        container.innerHTML = '<div class="p-3 text-xs text-red-600">Gagal memuat preview PDF.</div>';
+    }
+}
+
+// Attach listeners for file inputs to preview selected PDF
+document.addEventListener('DOMContentLoaded', function() {
+    const newInput = document.getElementById('new-file-pdf');
+    const editInput = document.getElementById('edit-file-pdf');
+
+    if (newInput) {
+        newInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            renderPdfPreview(url, 'new-pdf-preview');
+        });
+    }
+
+    if (editInput) {
+        editInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            renderPdfPreview(url, 'edit-pdf-preview');
+        });
+    }
+});
+</script>

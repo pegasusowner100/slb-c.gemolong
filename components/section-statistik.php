@@ -2,20 +2,39 @@
 // Reusable Statistik Section
 $usiaCounts = [];
 $pekerjaanCounts = [
-    'ASN/TNI/Polri' => 0,
-    'Petani/Nelayan' => 0,
     'Buruh' => 0,
+    'Karyawan Swasta' => 0,
+    'Pedagang Kecil' => 0,
+    'Petani' => 0,
+    'ASN/TNI/Polri' => 0,
     'Wiraswasta' => 0,
     'Lainnya' => 0
 ];
 $countLaki = 0;
 $countPerempuan = 0;
 
+$jenjangStat = [
+    'SDLB' => ['laki' => 0, 'perempuan' => 0, 'total' => 0],
+    'SMPLB' => ['laki' => 0, 'perempuan' => 0, 'total' => 0],
+    'SMALB' => ['laki' => 0, 'perempuan' => 0, 'total' => 0]
+];
+
 foreach ($all_siswa ?? [] as $s) {
     if (($s['jenis_kelamin'] ?? '') === 'Laki-laki') {
         $countLaki++;
     } elseif (($s['jenis_kelamin'] ?? '') === 'Perempuan') {
         $countPerempuan++;
+    }
+
+    $j = strtoupper(trim($s['jenjang'] ?? ''));
+    if (isset($jenjangStat[$j])) {
+        $jk = $s['jenis_kelamin'] ?? '';
+        if ($jk === 'Laki-laki') {
+            $jenjangStat[$j]['laki']++;
+        } elseif ($jk === 'Perempuan') {
+            $jenjangStat[$j]['perempuan']++;
+        }
+        $jenjangStat[$j]['total']++;
     }
 
     $usia = intval($s['usia'] ?? 0);
@@ -27,12 +46,29 @@ foreach ($all_siswa ?? [] as $s) {
     }
 
     $p = $s['pekerjaan_ortu'] ?? 'Lainnya';
+    if ($p == 'Petani/Nelayan') {
+        $p = 'Petani';
+    }
     if (isset($pekerjaanCounts[$p])) {
         $pekerjaanCounts[$p]++;
     } else {
         $pekerjaanCounts['Lainnya']++;
     }
 }
+
+// Fallback to static numbers if no database data
+$totalDbJenjang = $jenjangStat['SDLB']['total'] + $jenjangStat['SMPLB']['total'] + $jenjangStat['SMALB']['total'];
+if ($totalDbJenjang === 0) {
+    $jenjangStat = [
+        'SDLB' => ['laki' => 21, 'perempuan' => 7, 'total' => 28],
+        'SMPLB' => ['laki' => 7, 'perempuan' => 7, 'total' => 14],
+        'SMALB' => ['laki' => 11, 'perempuan' => 8, 'total' => 19]
+    ];
+}
+
+$totalJenjangLaki = $jenjangStat['SDLB']['laki'] + $jenjangStat['SMPLB']['laki'] + $jenjangStat['SMALB']['laki'];
+$totalJenjangPerempuan = $jenjangStat['SDLB']['perempuan'] + $jenjangStat['SMPLB']['perempuan'] + $jenjangStat['SMALB']['perempuan'];
+$totalJenjangTotal = $jenjangStat['SDLB']['total'] + $jenjangStat['SMPLB']['total'] + $jenjangStat['SMALB']['total'];
 
 $countGuru = 0;
 $countTendik = 0;
@@ -45,48 +81,14 @@ foreach ($guru_list ?? [] as $g) {
     }
 }
 
-$totalSiswaForAge = array_sum($usiaCounts);
-$yearColors = [
-    7 => '#3b82f6',
-    8 => '#0ea5e9',
-    9 => '#22c55e',
-    10 => '#f97316',
-    11 => '#eab308',
-    12 => '#f59e0b',
-    13 => '#ef4444',
-    14 => '#d946ef',
-    15 => '#8b5cf6',
-    16 => '#10b981',
-    17 => '#38bdf8',
-    18 => '#f43f5e',
-    19 => '#a855f7',
-    20 => '#14b8a6'
-];
-$ageLabels = [];
-$ageData = [];
-$ageColorsList = [];
-
-if ($totalSiswaForAge > 0) {
-    ksort($usiaCounts);
-    foreach ($usiaCounts as $usia => $count) {
-        $ageLabels[] = $usia . ' Tahun';
-        $ageData[] = round(($count / $totalSiswaForAge) * 100, 1);
-        $ageColorsList[] = $yearColors[$usia] ?? $yearColors[7];
-    }
-} else {
-    $ageLabels = ['15 Tahun', '16 Tahun', '17 Tahun', '18 Tahun', '19 Tahun'];
-    $ageData = [31.1, 39.2, 28.3, 1.1, 0.3];
-    $ageColorsList = ['#3b82f6', '#ef4444', '#f59e0b', '#22c55e', '#8b5cf6'];
-}
-
-$countLaki = $countLaki > 0 ? $countLaki : 224;
-$countPerempuan = $countPerempuan > 0 ? $countPerempuan : 264;
-$countGuru = $countGuru > 0 ? $countGuru : 34;
-$countTendik = $countTendik > 0 ? $countTendik : 6;
+$countLaki = $countLaki > 0 ? $countLaki : 0;
+$countPerempuan = $countPerempuan > 0 ? $countPerempuan : 0;
+$countGuru = $countGuru > 0 ? $countGuru : 0;
+$countTendik = $countTendik > 0 ? $countTendik : 0;
 $totalPekerjaan = array_sum($pekerjaanCounts);
 
-$ruanganCount = $hero['jumlah_ruangan'] ?? 26;
-$bukuPaketCount = $hero['buku_paket'] ?? 500;
+$ruanganCount = !empty($hero['jumlah_ruangan']) ? intval($hero['jumlah_ruangan']) : 26;
+$bukuPaketCount = !empty($hero['buku_paket']) ? intval($hero['buku_paket']) : 500;
 $ruanganPercent = min(100, max(0, round($ruanganCount / 40 * 100)));
 $bukuPaketPercent = min(100, max(0, round($bukuPaketCount / 600 * 100)));
 ?>
@@ -104,15 +106,15 @@ $bukuPaketPercent = min(100, max(0, round($bukuPaketCount / 600 * 100)));
     <div class="glass-section">
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <!-- Statistik Murid -->
-        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-8 border border-blue-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-8 border border-orange-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
           <div class="text-center">
-            <iconify-icon icon="mdi:account-school" class="w-24 h-24 text-blue-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
-            <div class="font-serif text-5xl font-bold text-blue-700 mb-3 counter" data-target="<?php echo $hero['siswa_aktif'] ?? 488; ?>">0</div>
-            <h3 class="font-bold text-xl text-blue-800 mb-6">Murid</h3>
-            <div class="grid grid-cols-2 gap-4 pt-6 border-t border-blue-200">
+            <iconify-icon icon="mdi:account-school" class="w-24 h-24 text-orange-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
+            <div class="font-serif text-5xl font-bold text-orange-700 mb-3 counter" style="color: #D4AF37 !important;" data-target="<?php echo $hero['siswa_aktif'] ?? 488; ?>">0</div>
+            <h3 class="font-bold text-xl text-orange-800 mb-6">Murid</h3>
+            <div class="grid grid-cols-2 gap-4 pt-6 border-t border-orange-200">
               <div class="text-center p-3 bg-white rounded-lg">
-                <span class="block font-semibold text-sm text-blue-700 mb-1">Laki-laki</span>
-                <span class="text-blue-600 text-xl font-bold"><?php echo $countLaki; ?></span>
+                <span class="block font-semibold text-sm text-orange-700 mb-1">Laki-laki</span>
+                <span class="text-orange-600 text-xl font-bold"><?php echo $countLaki; ?></span>
               </div>
               <div class="text-center p-3 bg-white rounded-lg">
                 <span class="block font-semibold text-sm text-pink-700 mb-1">Perempuan</span>
@@ -123,15 +125,15 @@ $bukuPaketPercent = min(100, max(0, round($bukuPaketCount / 600 * 100)));
         </div>
 
         <!-- Statistik Guru & Tendik -->
-        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-8 border border-green-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-8 border border-orange-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
           <div class="text-center">
-            <iconify-icon icon="mdi:account-group" class="w-24 h-24 text-green-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
-            <div class="font-serif text-5xl font-bold text-green-700 mb-3 counter" data-target="<?php echo $hero['tenaga_pendidik'] ?? 40; ?>">0</div>
-            <h3 class="font-bold text-xl text-green-800 mb-6">Guru & Tendik</h3>
-            <div class="grid grid-cols-2 gap-4 pt-6 border-t border-green-200">
+            <iconify-icon icon="mdi:account-group" class="w-24 h-24 text-orange-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
+            <div class="font-serif text-5xl font-bold text-orange-700 mb-3 counter" style="color: #D4AF37 !important;" data-target="<?php echo $hero['tenaga_pendidik'] ?? 40; ?>">0</div>
+            <h3 class="font-bold text-xl text-orange-800 mb-6">Guru & Tendik</h3>
+            <div class="grid grid-cols-2 gap-4 pt-6 border-t border-orange-200">
               <div class="text-center p-3 bg-white rounded-lg">
-                <span class="block font-semibold text-sm text-green-700 mb-1">Guru</span>
-                <span class="text-green-600 text-xl font-bold"><?php echo $countGuru; ?></span>
+                <span class="block font-semibold text-sm text-orange-700 mb-1">Guru</span>
+                <span class="text-orange-600 text-xl font-bold"><?php echo $countGuru; ?></span>
               </div>
               <div class="text-center p-3 bg-white rounded-lg">
                 <span class="block font-semibold text-sm text-purple-700 mb-1">Tendik</span>
@@ -142,38 +144,38 @@ $bukuPaketPercent = min(100, max(0, round($bukuPaketCount / 600 * 100)));
         </div>
 
         <!-- Statistik Ruangan -->
-        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-8 border border-purple-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl fade-in-up delay-300">
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-8 border border-orange-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl fade-in-up delay-300">
           <div class="text-center">
-            <iconify-icon icon="mdi:door-open" class="w-24 h-24 text-purple-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
-            <div class="font-serif text-5xl font-bold text-purple-700 mb-3 counter" data-target="<?php echo $ruanganCount; ?>">0</div>
-            <h3 class="font-bold text-xl text-purple-800 mb-6">Ruangan</h3>
-            <div class="pt-6 border-t border-purple-200">
+            <iconify-icon icon="mdi:door-open" class="w-24 h-24 text-orange-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
+            <div class="font-serif text-5xl font-bold text-orange-700 mb-3 counter" style="color: #D4AF37 !important;" data-target="<?php echo $ruanganCount; ?>">0</div>
+            <h3 class="font-bold text-xl text-orange-800 mb-6">Ruangan</h3>
+            <div class="pt-6 border-t border-orange-200">
               <div class="flex justify-between text-sm mb-3">
-                <span class="text-purple-700 font-medium">Pemanfaatan</span>
-                <span class="text-purple-600 font-bold">100%</span>
+                <span class="text-orange-700 font-medium">Pemanfaatan</span>
+                <span class="text-orange-600 font-bold">100%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div class="bg-gradient-to-r from-purple-400 to-purple-600 h-full rounded-full progress-bar" style="width: 100%" data-width="100%"></div>
+                <div class="bg-gradient-to-r from-orange-400 to-orange-600 h-full rounded-full progress-bar" style="width: 100%" data-width="100%"></div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Statistik Buku Paket -->
-        <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-lg p-8 border border-amber-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl fade-in-up delay-400">
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-8 border border-orange-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl fade-in-up delay-400">
           <div class="text-center">
-            <iconify-icon icon="mdi:bookshelf" class="w-24 h-24 text-amber-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
-            <div class="font-serif text-5xl font-bold text-amber-700 mb-3">
-              <span class="counter" data-target="<?php echo $bukuPaketCount; ?>">0</span>
+            <iconify-icon icon="mdi:bookshelf" class="w-24 h-24 text-orange-600 mx-auto mb-6" style="font-size: 128px;"></iconify-icon>
+            <div class="font-serif text-5xl font-bold text-orange-700 mb-3">
+              <span class="counter" style="color: #D4AF37 !important;" data-target="<?php echo $bukuPaketCount; ?>">0</span>
             </div>
-            <h3 class="font-bold text-xl text-amber-800 mb-6">Buku Paket</h3>
-            <div class="pt-6 border-t border-amber-200">
+            <h3 class="font-bold text-xl text-orange-800 mb-6">Buku Paket</h3>
+            <div class="pt-6 border-t border-orange-200">
               <div class="flex justify-between text-sm mb-3">
-                <span class="text-amber-700 font-medium">Pemanfaatan</span>
-                <span class="text-amber-600 font-bold">100%</span>
+                <span class="text-orange-700 font-medium">Pemanfaatan</span>
+                <span class="text-orange-600 font-bold">100%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div class="bg-gradient-to-r from-amber-400 to-amber-600 h-full rounded-full progress-bar" style="width: 100%" data-width="100%"></div>
+                <div class="bg-gradient-to-r from-orange-400 to-orange-600 h-full rounded-full progress-bar" style="width: 100%" data-width="100%"></div>
               </div>
             </div>
           </div>
@@ -181,60 +183,99 @@ $bukuPaketPercent = min(100, max(0, round($bukuPaketCount / 600 * 100)));
       </div>
 
       <div class="grid lg:grid-cols-2 gap-8">
-        <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100 fade-in-left delay-200">
-          <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
-            <h3 class="font-serif text-2xl font-semibold text-gray-800">Data Sosial Ekonomi Orang Tua</h3>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-              <thead>
-                <tr class="bg-gradient-to-r from-gray-50 to-gray-100">
-                  <th class="border border-gray-200 px-4 py-3 text-center font-semibold text-sm text-gray-700 rounded-tl-lg">Pekerjaan</th>
-                  <th class="border border-gray-200 px-4 py-3 text-center font-semibold text-sm text-gray-700 rounded-tr-lg">Jumlah</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php
-                  $colors = ['bg-blue-50', 'bg-green-50', 'bg-orange-50', 'bg-purple-50', 'bg-yellow-50'];
-                  $index = 0;
-                  foreach ($pekerjaanCounts as $k => $j) {
-                ?>
-                <tr class="hover:bg-gray-50 transition-colors <?php echo $colors[$index % 5]; ?>">
-                  <td class="border border-gray-200 px-4 py-3 text-center text-sm text-gray-700 font-medium"><?php echo $k; ?></td>
-                  <td class="border border-gray-200 px-4 py-3 text-center text-sm text-gray-700 font-semibold"><?php echo $j; ?> Orang</td>
-                </tr>
-                <?php $index++; } ?>
-                <tr class="bg-gradient-to-r from-gray-200 to-gray-300 font-bold">
-                  <td class="border border-gray-200 px-4 py-3 text-center text-sm text-gray-800">Total</td>
-                  <td class="border border-gray-200 px-4 py-3 text-center text-sm text-gray-800"><?php echo $totalPekerjaan; ?> Orang</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="mt-6 flex items-center justify-center gap-2 text-sm text-gray-600">
-            <iconify-icon icon="lucide:calendar" class="w-5 h-5"></iconify-icon>
-            <span>Sumber: Dapodik <?php echo strftime('%B %Y'); ?></span>
+        <div class="bg-white rounded-2xl shadow-xl p-8 border border-orange-200 fade-in-left delay-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-4 mb-6 pb-4 border-b border-orange-100">
+              <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                <iconify-icon icon="lucide:wallet" class="w-6 h-6"></iconify-icon>
+              </div>
+              <h3 class="font-serif text-2xl font-semibold text-gray-800">Data Ekonomi Keluarga Peserta Didik</h3>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-orange-200 shadow-sm">
+              <table class="w-full border-collapse text-sm">
+                <thead>
+                  <tr class="bg-gradient-to-r from-orange-600 to-orange-700 text-white font-bold uppercase tracking-wider text-xs">
+                    <th class="px-5 py-3.5 text-left border-r border-white/20 text-white" style="color: #ffffff !important;">Pekerjaan Orang Tua</th>
+                    <th class="px-5 py-3.5 text-center text-white" style="color: #ffffff !important;">Jumlah</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-orange-100">
+                  <?php
+                    $index = 0;
+                    foreach ($pekerjaanCounts as $k => $j) {
+                  ?>
+                  <tr class="hover:bg-orange-50/50 transition-colors duration-150">
+                    <td class="px-5 py-3.5 text-gray-700 font-medium border-r border-orange-100"><?php echo $k; ?></td>
+                    <td class="px-5 py-3.5 text-center text-gray-900 font-bold"><?php echo $j; ?> <span class="text-xs font-normal text-gray-500">Orang</span></td>
+                  </tr>
+                  <?php $index++; } ?>
+                  <tr class="bg-orange-50 font-bold text-gray-800 border-t-2 border-orange-200">
+                    <td class="px-5 py-4 text-left uppercase text-xs tracking-wider border-r border-orange-100">Total Keseluruhan</td>
+                    <td class="px-5 py-4 text-center text-base text-orange-600"><?php echo $totalPekerjaan; ?> <span class="text-xs font-medium text-gray-500">Orang</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100 fade-in-right delay-300">
-          <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
-            <iconify-icon icon="lucide:birthday-cake" class="w-8 h-8 text-pink-700 flex-shrink-0"></iconify-icon>
-            <h3 class="font-serif text-2xl font-semibold text-gray-800">Usia Murid</h3>
-          </div>
-          <div class="flex flex-col md:flex-row items-center justify-center gap-8">
-            <div class="relative">
-              <canvas id="ageChart" width="300" height="300"></canvas>
-            </div>
-            <div class="space-y-3" id="ageLegend">
-              <?php for ($i = 0; $i < count($ageLabels); $i++): ?>
-              <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                <div class="w-4 h-4 rounded-full shadow" style="background-color: <?php echo $ageColorsList[$i]; ?>"></div>
-                <span class="text-sm font-medium text-gray-700"><?php echo $ageLabels[$i]; ?></span>
-                <span class="text-sm font-semibold ml-auto" style="color: <?php echo $ageColorsList[$i]; ?>"><?php echo $ageData[$i]; ?>%</span>
+        <div class="bg-white rounded-2xl shadow-xl p-8 border border-orange-200 fade-in-right delay-300 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-4 mb-6 pb-4 border-b border-orange-100">
+              <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                <iconify-icon icon="lucide:school" class="w-6 h-6"></iconify-icon>
               </div>
-              <?php endfor; ?>
+              <h3 class="font-serif text-2xl font-semibold text-gray-800">Data Murid</h3>
             </div>
+            <div class="overflow-x-auto rounded-xl border border-orange-200 shadow-sm">
+              <table class="w-full border-collapse text-center text-sm font-medium">
+                <thead>
+                  <tr class="bg-gradient-to-r from-orange-600 to-orange-700 text-white font-bold uppercase tracking-wider text-xs">
+                    <th rowspan="2" class="border-r border-b border-white/20 px-3 py-3.5 align-middle text-white" style="color: #ffffff !important;">NO</th>
+                    <th rowspan="2" class="border-r border-b border-white/20 px-4 py-3.5 align-middle text-white" style="color: #ffffff !important;">JENJANG/KELAS</th>
+                    <th colspan="3" class="border-b border-white/20 px-4 py-2 text-white" style="color: #ffffff !important;">JUMLAH</th>
+                  </tr>
+                  <tr class="bg-orange-700 text-white font-bold uppercase tracking-wider text-xs">
+                    <th class="border-r border-white/20 px-3 py-2.5 text-white" style="color: #ffffff !important;">LAKI-LAKI</th>
+                    <th class="border-r border-white/20 px-3 py-2.5 text-white" style="color: #ffffff !important;">PEREMPUAN</th>
+                    <th class="px-3 py-2.5 text-white" style="color: #ffffff !important;">JUMLAH</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-orange-100">
+                  <tr class="hover:bg-orange-50/50 transition-colors duration-150">
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600">1.</td>
+                    <td class="border-r border-orange-100 px-4 py-3.5 font-bold text-gray-800">SDLB</td>
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600"><?php echo $jenjangStat['SDLB']['laki']; ?></td>
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600"><?php echo $jenjangStat['SDLB']['perempuan']; ?></td>
+                    <td class="px-3 py-3.5 font-bold text-orange-600"><?php echo $jenjangStat['SDLB']['total']; ?></td>
+                  </tr>
+                  <tr class="hover:bg-orange-50/50 transition-colors duration-150">
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600">2.</td>
+                    <td class="border-r border-orange-100 px-4 py-3.5 font-bold text-gray-800">SMPLB</td>
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600"><?php echo $jenjangStat['SMPLB']['laki']; ?></td>
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600"><?php echo $jenjangStat['SMPLB']['perempuan']; ?></td>
+                    <td class="px-3 py-3.5 font-bold text-orange-600"><?php echo $jenjangStat['SMPLB']['total']; ?></td>
+                  </tr>
+                  <tr class="hover:bg-orange-50/50 transition-colors duration-150">
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600">3.</td>
+                    <td class="border-r border-orange-100 px-4 py-3.5 font-bold text-gray-800">SMALB</td>
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600"><?php echo $jenjangStat['SMALB']['laki']; ?></td>
+                    <td class="border-r border-orange-100 px-3 py-3.5 text-gray-600"><?php echo $jenjangStat['SMALB']['perempuan']; ?></td>
+                    <td class="px-3 py-3.5 font-bold text-orange-600"><?php echo $jenjangStat['SMALB']['total']; ?></td>
+                  </tr>
+                  <tr class="bg-orange-50 font-bold text-gray-800 border-t-2 border-orange-200">
+                    <td colspan="2" class="border-r border-orange-100 px-4 py-4 uppercase text-xs tracking-wider text-center">JUMLAH</td>
+                    <td class="border-r border-orange-100 px-3 py-4 text-orange-600"><?php echo $totalJenjangLaki; ?></td>
+                    <td class="border-r border-orange-100 px-3 py-4 text-orange-600"><?php echo $totalJenjangPerempuan; ?></td>
+                    <td class="px-3 py-4 text-base text-orange-600"><?php echo $totalJenjangTotal; ?></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-orange-800 bg-orange-50 py-2.5 px-4 rounded-lg border border-orange-200 w-fit mx-auto">
+            <iconify-icon icon="lucide:calendar" class="w-4 h-4 text-orange-600"></iconify-icon>
+            <span>Sumber: Dapodik July 2026</span>
           </div>
         </div>
       </div>
@@ -286,26 +327,5 @@ $bukuPaketPercent = min(100, max(0, round($bukuPaketCount / 600 * 100)));
       }, { threshold: 0.5 });
       progressObserver.observe(bar);
     });
-    const ctx = document.getElementById('ageChart');
-    if (ctx) {
-      new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: <?php echo json_encode($ageLabels); ?>,
-          datasets: [{
-            data: <?php echo json_encode($ageData); ?>,
-            backgroundColor: <?php echo json_encode($ageColorsList); ?>,
-            borderWidth: 0,
-            cutout: '70%'
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      });
-    }
   });
 </script>

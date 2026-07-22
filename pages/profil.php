@@ -1,35 +1,33 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Profil — " . SITE_NAME;
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/profil');
+$title = "Profil — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 
 // Default profil data
 $defaultProfil = [
-    'nama_sekolah' => SITE_NAME,
-    'akreditasi' => 'A',
-    'sejarah' => 'SLB-C YPSLB Gemolong didirikan dengan tujuan memberikan pendidikan terbaik untuk anak berkebutuhan khusus. Berkomitmen untuk menciptakan generasi mandiri, berkarakter, dan berprestasi.',
-    'visi' => 'Menjadikan SLB-C YPSLB Gemolong sebagai lembaga pendidikan luar biasa yang unggul dalam pengembangan potensi anak berkebutuhan khusus secara optimal, berkarakter, mandiri, dan berprestasi.',
-    'misi' => 'Menyelenggarakan pendidikan yang berkualitas, mengembangkan potensi akademis dan non-akademis, serta membangun karakter, serta menjalin kerjasama dengan berbagai pihak.',
-    'profil_kepala_sekolah' => 'Kepala sekolah yang inovatif, berdedikasi, dan berpengalaman dalam dunia pendidikan khusus.',
-    'sambutan' => 'Pendidikan bukan sekadar menuntut ilmu, melainkan proses membentuk karakter, membangun mimpi, dan memberdayakan generasi yang akan membawa perubahan bagi bangsa. Di SLB-C YPSLB Gemolong, kami berkomitmen untuk menjadi rumah kedua bagi setiap siswa agar mereka tumbuh menjadi pribadi yang unggul dan berkarakter.',
-    'alamat' => 'Jl. Pendidikan No. 1, Gemolong, Kabupaten Sragen, Jawa Tengah',
-    'telepon' => '(0271) 123456',
-    'email' => 'info@slbc-gemolong.sch.id',
-    'gambar_gedung' => 'https://picsum.photos/seed/school-building-front/700/525',
-    'struktur_organisasi' => 'https://picsum.photos/seed/struktur-organisasi/1000/600',
-    'dasar_hukum' => '1. Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional
-2. Peraturan Pemerintah Nomor 19 Tahun 2005 tentang Pendidikan Anak Berkebutuhan Khusus
-3. Peraturan Menteri Pendidikan dan Kebudayaan Nomor 70 Tahun 2013 tentang Pendidikan Dasar
-4. Peraturan Daerah Provinsi Jawa Tengah Nomor 12 Tahun 2018 tentang Pendidikan Luar Biasa
-5. Akta Notaris Pendirian Yayasan YPSLB Gemolong Nomor 01 Tanggal 01 Januari 2000',
-    'nama_kepala_sekolah' => 'Drs. Ahmad Sudrajat, M.Pd',
-    'foto_kepala_sekolah' => 'https://picsum.photos/seed/kepsek-portrait/480/600',
+    'nama_sekolah' => '',
+    'akreditasi' => '',
+    'sejarah' => '',
+    'visi' => '',
+    'misi' => '',
+    'profil_kepala_sekolah' => '',
+    'sambutan' => '',
+    'alamat' => '',
+    'telepon' => '',
+    'email' => '',
+    'gambar_gedung' => '',
+    'struktur_organisasi' => '',
+    'dasar_hukum' => '',
+    'nama_kepala_sekolah' => '',
+    'foto_kepala_sekolah' => '',
     'instagram' => '',
     'facebook' => '',
     'youtube' => '',
     'tiktok' => '',
     'website' => '',
-    'maps_url' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.012345678901!2d110.98765432109876!3d-7.456789012345679!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a1234567890ab%3A0x123456789abcdef!2sSLB-C%20YPSLB%20Gemolong!5e0!3m2!1sid!2sid!4v1234567890123!5m2!1sid!2sid',
+    'maps_url' => '',
     'video_profil' => ''
 ];
 $profil = $defaultProfil;
@@ -89,12 +87,15 @@ if ($supabaseConnected) {
     }
 }
 
-// Split guru into guru and tendik
+// Split guru into pimpinan, guru, and tendik/teknis
+$pimpinanOnly = [];
 $guruOnly = [];
 $tendikOnly = [];
 foreach ($guruList as $g) {
     $jabatan = strtolower($g['jabatan'] ?? '');
-    if (strpos($jabatan, 'guru') !== false || empty($jabatan)) {
+    if (strpos($jabatan, 'kepala') !== false || strpos($jabatan, 'wakil') !== false || strpos($jabatan, 'waka') !== false) {
+        $pimpinanOnly[] = $g;
+    } elseif (strpos($jabatan, 'guru') !== false || empty($jabatan)) {
         $guruOnly[] = $g;
     } else {
         $tendikOnly[] = $g;
@@ -121,7 +122,7 @@ include '../components/head.php';
       <div class="flex flex-wrap gap-4 justify-center">
         <button class="tab-btn px-6 py-3 rounded-full border-2 border-brand-accent text-brand-accent font-bold text-sm hover:bg-brand-accent hover:text-white transition-all" data-section="sambutan">Sambutan Kepala Sekolah</button>
         <button class="tab-btn px-6 py-3 rounded-full border-2 border-brand-border text-brand-muted font-bold text-sm hover:border-brand-accent hover:text-brand-accent transition-all" data-section="dasar-hukum">Dasar Hukum</button>
-        <button class="tab-btn px-6 py-3 rounded-full border-2 border-brand-border text-brand-muted font-bold text-sm hover:border-brand-accent hover:text-brand-accent transition-all" data-section="sejarah">Sejarah Singkat</button>
+        <button class="tab-btn px-6 py-3 rounded-full border-2 border-brand-border text-brand-muted font-bold text-sm hover:border-brand-accent hover:text-brand-accent transition-all" data-section="sejarah">Latar Belakang</button>
         <button class="tab-btn px-6 py-3 rounded-full border-2 border-brand-border text-brand-muted font-bold text-sm hover:border-brand-accent hover:text-brand-accent transition-all" data-section="visimisi">Visi Misi</button>
         <button class="tab-btn px-6 py-3 rounded-full border-2 border-brand-border text-brand-muted font-bold text-sm hover:border-brand-accent hover:text-brand-accent transition-all" data-section="struktur">Struktur Organisasi</button>
         <button class="tab-btn px-6 py-3 rounded-full border-2 border-brand-border text-brand-muted font-bold text-sm hover:border-brand-accent hover:text-brand-accent transition-all" data-section="prestasi">Prestasi</button>
@@ -141,18 +142,19 @@ include '../components/head.php';
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
         <div class="text-center mb-8 fade-in-up delay-100">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Profil</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Sambutan Kepala Sekolah</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+        <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Profil</span>
+          <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Sambutan Kepala Sekolah</h2>
         </div>
+      </div>
         
         <div class="bg-white/70 backdrop-blur-sm rounded-xl border border-brand-border/50 p-8 max-w-4xl mx-auto fade-in-up delay-200">
           <div class="grid lg:grid-cols-5 gap-12 items-center">
             <div class="lg:col-span-2 relative">
               <div class="relative">
                 <img src="<?php echo htmlspecialchars($profil['foto_kepala_sekolah'] ?? 'https://picsum.photos/seed/kepsek-portrait/480/600.jpg'); ?>" alt="Kepala Sekolah" class="w-full h-[450px] object-cover rounded-lg shadow-lg">
-                <div class="absolute -bottom-4 -right-4 w-24 h-24 border-2 border-brand-accent rounded-lg"></div>
-                <div class="absolute -top-4 -left-4 w-24 h-24 border-2 border-brand-accent/30 rounded-lg"></div>
+                <div class="absolute -bottom-4 -right-4 w-24 h-24 border-4 border-brand-accent rounded-lg rotate-6"></div>
+                <div class="absolute -top-4 -left-4 w-24 h-24 border-4 border-brand-accent/30 rounded-lg -rotate-6"></div>
               </div>
             </div>
             <div class="lg:col-span-3">
@@ -163,9 +165,10 @@ include '../components/head.php';
                 </p>
               </div>
               <div class="flex items-center gap-4">
+                <img src="<?php echo htmlspecialchars($profil['foto_kepala_sekolah'] ?? 'https://picsum.photos/seed/kepsek/100/100.jpg'); ?>" alt="Kepala Sekolah" class="w-24 h-24 rounded-full object-cover border-2 border-brand-accent/30">
                 <div>
-                  <h4 class="font-serif text-lg font-semibold"><?php echo htmlspecialchars($profil['nama_kepala_sekolah'] ?? 'Drs. Ahmad Sudrajat, M.Pd'); ?></h4>
-                  <p class="text-xs text-brand-muted">Kepala Sekolah <?php echo htmlspecialchars($profil['nama_sekolah'] ?? 'SLB-C YPSLB Gemolong'); ?></p>
+                  <h4 class="font-serif text-2xl font-semibold"><?php echo htmlspecialchars($profil['nama_kepala_sekolah'] ?? 'Drs. Ahmad Sudrajat, M.Pd'); ?></h4>
+                  <p class="text-sm text-brand-muted">Kepala Sekolah <?php echo htmlspecialchars($profil['nama_sekolah'] ?? 'SLB BC KARYA SEJAHTERA'); ?></p>
                 </div>
               </div>
             </div>
@@ -180,23 +183,29 @@ include '../components/head.php';
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
         <div class="text-center mb-8 fade-in-up delay-100">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Profil</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Dasar Hukum</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Profil</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Dasar Hukum</h2>
+          </div>
         </div>
         
-        <div class="bg-white/70 backdrop-blur-sm rounded-xl border border-brand-border/50 p-8 max-w-4xl mx-auto fade-in-up delay-200">
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-brand-border/30 overflow-hidden max-w-4xl mx-auto fade-in-up delay-200">
+          <div class="bg-gradient-to-r from-orange-500 to-orange-600 -mx-8 -mt-8 px-8 py-4 mb-6">
+            <h3 class="font-serif text-3xl font-bold text-center text-white">Peraturan & Dasar Hukum</h3>
+          </div>
           <div class="space-y-4">
             <?php 
             $dasarHukumList = explode("\n", trim($profil['dasar_hukum']));
-            foreach ($dasarHukumList as $item): 
+            foreach ($dasarHukumList as $index => $item): 
               if (!empty(trim($item))):
             ?>
-            <div class="flex items-start gap-4 p-4 bg-brand-bg/50 rounded-lg border border-brand-border/30 hover:border-brand-accent/30 transition-colors">
-              <div class="w-10 h-10 bg-brand-accent/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <iconify-icon icon="lucide:file-text" class="text-brand-accent w-5 h-5"></iconify-icon>
+            <div class="p-5 bg-orange-50 rounded-xl border-l-4 border-orange-500 hover:bg-orange-100 transition-colors">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center mt-0.5">
+                  <span class="font-serif text-xl font-bold text-white"><?= $index + 1 ?></span>
+                </div>
+                <p class="font-serif text-gray-700 text-lg leading-relaxed"><?= htmlspecialchars(trim($item)) ?></p>
               </div>
-              <p class="text-brand-dark text-sm font-medium leading-relaxed"><?= htmlspecialchars(trim($item)) ?></p>
             </div>
             <?php 
               endif;
@@ -213,9 +222,10 @@ include '../components/head.php';
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
         <div class="text-center mb-8 fade-in-up delay-100">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Profil</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Sejarah Singkat</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Profil</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Latar Belakang</h2>
+          </div>
         </div>
         <div class="grid lg:grid-cols-2 gap-12 items-center">
           <div class="fade-in-left delay-200">
@@ -242,46 +252,59 @@ include '../components/head.php';
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
         <div class="text-center mb-8 fade-in-up delay-100">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Profil</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Visi & Misi</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Profil</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Visi & Misi</h2>
+          </div>
         </div>
-        <div class="space-y-12">
+        <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
           <!-- VISI -->
           <div class="fade-in-up delay-200">
-            <div class="flex flex-col items-center gap-4 mb-4">
-              <div class="w-12 h-12 rounded-full bg-brand-accent/10 flex items-center justify-center">
-                <iconify-icon icon="lucide:target" class="text-brand-accent text-xl"></iconify-icon>
+            <div class="h-full bg-white p-8 rounded-2xl border-2 border-brand-accent/20 shadow-md flex flex-col hover:border-brand-accent transition-colors duration-300">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-14 h-14 rounded-2xl bg-brand-accent flex items-center justify-center shadow-md shadow-brand-accent/20 flex-shrink-0">
+                  <iconify-icon icon="lucide:target" class="text-white text-3xl"></iconify-icon>
+                </div>
+                <h3 class="font-serif text-3xl font-bold text-[#1F2D26]">Visi</h3>
               </div>
-              <div class="text-center">
-                <h3 class="font-serif text-2xl font-semibold mb-3">Visi</h3>
-                <p class="text-brand-muted text-sm font-light leading-relaxed text-justify">
-                  <?= nl2br(htmlspecialchars($profil['visi'])) ?>
-                </p>
-              </div>
+              <p class="text-[#1F2D26] text-base md:text-lg font-medium leading-relaxed border-l-4 border-brand-accent pl-4 py-1">
+                <?= nl2br(htmlspecialchars($profil['visi'])) ?>
+              </p>
             </div>
           </div>
           
           <!-- MISI -->
           <div class="fade-in-up delay-300">
-            <div class="flex flex-col items-center gap-4 mb-4">
-              <div class="w-12 h-12 rounded-full bg-brand-accent/10 flex items-center justify-center">
-                <iconify-icon icon="lucide:flag" class="text-brand-accent text-xl"></iconify-icon>
-              </div>
-              <div class="w-full max-w-3xl">
-                <h3 class="font-serif text-2xl font-semibold mb-3 text-center">Misi</h3>
-                <div class="text-brand-muted text-sm font-light leading-relaxed text-justify">
-                  <?php 
-                  $misiText = $profil['misi'];
-                  $lines = explode("\n", $misiText);
-                  foreach ($lines as $index => $line) {
-                      $trimmedLine = trim($line);
-                      if (!empty($trimmedLine)) {
-                          echo '<div class="mb-3">'. htmlspecialchars($trimmedLine) . '</div>';
-                      }
-                  }
-                  ?>
+            <div class="h-full bg-white p-8 rounded-2xl border-2 border-amber-500/20 shadow-md flex flex-col hover:border-amber-500 transition-colors duration-300">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0">
+                  <iconify-icon icon="lucide:flag" class="text-white text-3xl"></iconify-icon>
                 </div>
+                <h3 class="font-serif text-3xl font-bold text-[#1F2D26]">Misi</h3>
+              </div>
+              <div class="space-y-5">
+                <?php 
+                $misiText = $profil['misi'];
+                $lines = explode("\n", $misiText);
+                $misiIndex = 1;
+                foreach ($lines as $line) {
+                    $trimmedLine = trim($line);
+                    if (!empty($trimmedLine)) {
+                        // Hilangkan format angka manual jika ada (misal "1.", "2)") agar tidak duplikat
+                        $cleanLine = preg_replace('/^\d+[\.\)\s-]+\s*/', '', $trimmedLine);
+                        ?>
+                        <div class="flex items-start gap-4">
+                          <span class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-accent text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                            <?= $misiIndex++ ?>
+                          </span>
+                          <p class="text-[#1F2D26] text-sm md:text-base font-medium leading-relaxed pt-0.5">
+                            <?= htmlspecialchars($cleanLine) ?>
+                          </p>
+                        </div>
+                        <?php
+                    }
+                }
+                ?>
               </div>
             </div>
           </div>
@@ -295,9 +318,10 @@ include '../components/head.php';
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
         <div class="text-center mb-8 fade-in-up delay-100">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Profil</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Struktur Organisasi</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Profil</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Struktur Organisasi</h2>
+          </div>
         </div>
         
         <div class="flex justify-center fade-in-up delay-200">
@@ -312,9 +336,10 @@ include '../components/head.php';
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
         <div class="text-center mb-8 fade-in-up delay-100">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Profil</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Prestasi</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Profil</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Prestasi</h2>
+          </div>
         </div>
         
         <?php if (empty($prestasiList)): ?>
@@ -354,13 +379,39 @@ include '../components/head.php';
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
         <div class="text-center mb-8 fade-in-up delay-100">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Profil</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Sumber Daya Manusia</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Profil</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Sumber Daya Manusia</h2>
+          </div>
         </div>
 
-        <!-- GURU -->
+        <!-- 1. KEPALA SEKOLAH DAN WAKIL KEPALA SEKOLAH -->
         <div class="mb-12 fade-in-up delay-200">
+          <h3 class="font-serif text-2xl font-semibold mb-6 flex items-center gap-2">
+            <iconify-icon icon="lucide:user-check" class="text-brand-accent"></iconify-icon>
+            Kepala Sekolah dan Wakil Kepala Sekolah
+          </h3>
+          <?php if (empty($pimpinanOnly)): ?>
+            <div class="text-center py-12">
+              <p class="text-brand-muted">Belum ada data Kepala Sekolah dan Wakil Kepala Sekolah.</p>
+            </div>
+          <?php else: ?>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <?php foreach ($pimpinanOnly as $index => $pimpinan): ?>
+                <div class="group cursor-pointer text-center">
+                  <div class="overflow-hidden rounded-lg mb-4">
+                    <img src="<?= htmlspecialchars($pimpinan['foto'] ?? 'https://picsum.photos/seed/pimpinan-'. $index .'/300/360') ?>" class="w-full h-[320px] md:h-[360px] object-cover object-center transition-transform duration-500 group-hover:scale-110" alt="<?= htmlspecialchars($pimpinan['nama']) ?>">
+                  </div>
+                  <h4 class="font-serif text-lg mb-1"><?= htmlspecialchars($pimpinan['nama']) ?></h4>
+                  <p class="text-xs text-brand-muted mb-1"><?= htmlspecialchars($pimpinan['jabatan'] ?? 'Pimpinan') ?></p>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+
+        <!-- 2. GURU -->
+        <div class="mb-12 fade-in-up delay-300">
           <h3 class="font-serif text-2xl font-semibold mb-6 flex items-center gap-2">
             <iconify-icon icon="lucide:graduation-cap" class="text-brand-accent"></iconify-icon>
             Guru
@@ -387,15 +438,15 @@ include '../components/head.php';
           <?php endif; ?>
         </div>
 
-        <!-- TENDIK -->
-        <div class="fade-in-up delay-300">
+        <!-- 3. TENAGA PENDIDIK DAN TEKNIS -->
+        <div class="fade-in-up delay-400">
           <h3 class="font-serif text-2xl font-semibold mb-6 flex items-center gap-2">
             <iconify-icon icon="lucide:users" class="text-brand-accent"></iconify-icon>
-            Tenaga Kependidikan (Tendik)
+            Tenaga Pendidik dan Teknis
           </h3>
           <?php if (empty($tendikOnly)): ?>
             <div class="text-center py-12">
-              <p class="text-brand-muted">Belum ada data tendik.</p>
+              <p class="text-brand-muted">Belum ada data tenaga pendidik dan teknis.</p>
             </div>
           <?php else: ?>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

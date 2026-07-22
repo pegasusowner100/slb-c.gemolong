@@ -1,7 +1,9 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Statistik — " . SITE_NAME;
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/statistik');
+$title = "Statistik — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 
 // Default data
 $hero = [
@@ -52,12 +54,23 @@ $countLaki = 0;
 $countPerempuan = 0;
 $usiaCounts = [];
 $pekerjaanCounts = [
-    'ASN/TNI/Polri' => 0,
-    'Petani/Nelayan' => 0,
     'Buruh' => 0,
+    'Karyawan Swasta' => 0,
+    'Pedagang Kecil' => 0,
+    'Petani' => 0,
+    'ASN/TNI/Polri' => 0,
     'Wiraswasta' => 0,
     'Lainnya' => 0
 ];
+// Data by jenjang
+$jenjangData = [
+    'SDLB' => ['laki' => 0, 'perempuan' => 0, 'total' => 0],
+    'SMPLB' => ['laki' => 0, 'perempuan' => 0, 'total' => 0],
+    'SMALB' => ['laki' => 0, 'perempuan' => 0, 'total' => 0]
+];
+$totalJenjangLaki = 0;
+$totalJenjangPerempuan = 0;
+$totalJenjangTotal = 0;
 
 foreach ($all_siswa as $s) {
     // Jenis kelamin
@@ -78,11 +91,32 @@ foreach ($all_siswa as $s) {
 
     // Pekerjaan orang tua
     $p = $s['pekerjaan_ortu'] ?? 'Lainnya';
+    if ($p == 'Petani/Nelayan') {
+        $p = 'Petani';
+    }
     if (isset($pekerjaanCounts[$p])) {
         $pekerjaanCounts[$p]++;
     } else {
         $pekerjaanCounts['Lainnya']++;
     }
+
+    // By jenjang
+    $jenjang = $s['jenjang'] ?? '';
+    if (isset($jenjangData[$jenjang])) {
+        if ($s['jenis_kelamin'] == 'Laki-laki') {
+            $jenjangData[$jenjang]['laki']++;
+        } elseif ($s['jenis_kelamin'] == 'Perempuan') {
+            $jenjangData[$jenjang]['perempuan']++;
+        }
+        $jenjangData[$jenjang]['total']++;
+    }
+}
+
+// Calculate totals for jenjang
+foreach ($jenjangData as $data) {
+    $totalJenjangLaki += $data['laki'];
+    $totalJenjangPerempuan += $data['perempuan'];
+    $totalJenjangTotal += $data['total'];
 }
 
 // Calculate guru and tendik
@@ -147,7 +181,7 @@ include '../components/head.php';
     </div>
   </section>
 
-  <?php include __DIR__ . '/../components/section-statistik.php'; ?>
+  <?php include '../components/section-statistik.php'; ?>
 
   <?php include '../components/footer.php'; ?>
 </body>

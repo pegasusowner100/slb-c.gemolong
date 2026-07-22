@@ -1,7 +1,9 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Guru & Tenaga Pendidik — " . SITE_NAME;
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/guru');
+$title = "Guru & Tenaga Pendidik — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 
 // Fetch guru
 $guru_list = [];
@@ -36,6 +38,12 @@ include '../components/head.php';
   <section id="guru" class="py-24">
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Guru</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Guru Berdedikasi</h2>
+          </div>
+        </div>
         <?php if (empty($guru_list)): ?>
           <div class="text-center py-12">
             <iconify-icon icon="lucide:users" class="text-6xl text-brand-muted/30 mb-4"></iconify-icon>

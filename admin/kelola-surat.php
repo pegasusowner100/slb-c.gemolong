@@ -1,4 +1,5 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
@@ -18,7 +19,7 @@ function formatTanggalIndonesia($timestamp) {
   return "$namaHari, $tanggal $namaBulan $tahun $jam";
 }
 
- $title = "Kelola Surat — " . SITE_NAME;
+ $title = "Kelola Surat — SLB BC KARYA SEJAHTERA " . SITE_NAME;
  $page_title = "Kelola Surat";
 
 // Handle delete action
@@ -66,6 +67,22 @@ include 'components/sidebar.php';
     <?php include 'components/header.php'; ?>
     <div class="flex-1 overflow-y-auto p-8">
       <div class="max-w-7xl">
+        <!-- PANDUAN PENGISIAN / KELOLA SURAT -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 shadow-sm flex items-start gap-4 mb-6">
+            <div class="p-3 bg-blue-500 text-white rounded-xl shadow-sm">
+                <iconify-icon icon="lucide:info" class="text-2xl flex-shrink-0"></iconify-icon>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-bold text-gray-800 text-base mb-1">Panduan Pengelolaan Layanan Pengajuan Surat</h4>
+                <p class="text-sm text-gray-600 mb-3">Ikuti petunjuk pengelolaan pengajuan surat masuk berikut:</p>
+                <ul class="list-disc list-inside text-sm text-gray-700 space-y-2">
+                    <li><strong>Melihat & Menyaring Surat:</strong> Gunakan kotak pencarian untuk mencari berdasarkan nama/email, atau filter tanggal masuk pengajuan surat untuk memudahkan penyaringan data.</li>
+                    <li><strong>Mengubah Detail / Memberi Respon:</strong> Klik ikon pensil (Edit/Respon) pada kolom aksi untuk memunculkan formulir. Anda dapat mengoreksi data pemohon atau menuliskan isi respon balasan (misal nomor surat, atau pemberitahuan pengambilan) beserta statusnya.</li>
+                    <li><strong>Menghapus Pengajuan:</strong> Jika surat sudah selesai diproses jangka panjang atau tidak sah, Anda dapat menggunakan tombol hapus (ikon tempat sampah) pada akhir formulir pengeditan.</li>
+                </ul>
+            </div>
+        </div>
+
         <div class="bg-white rounded-2xl border border-slate-100 shadow-md overflow-hidden">
           <div class="p-6 border-b border-slate-200 flex items-center justify-between">
             <h3 class="font-semibold text-slate-900 text-lg"><?php echo $page_title; ?></h3>

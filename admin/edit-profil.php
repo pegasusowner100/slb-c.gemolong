@@ -1,10 +1,11 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Edit Profil Sekolah — " . SITE_NAME;
+$title = "Edit Profil Sekolah SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Edit Profil";
 $success = '';
 $error = '';
@@ -12,68 +13,54 @@ $error = '';
 // Default profil data
 $defaultProfil = [
     'nama_sekolah' => SITE_NAME,
-    'akreditasi' => 'A',
-    'sejarah' => 'SLB-C YPSLB Gemolong didirikan dengan tujuan memberikan pendidikan terbaik untuk anak berkebutuhan khusus. Berkomitmen untuk menciptakan generasi mandiri, berkarakter, dan berprestasi.',
-    'visi' => 'Menjadikan SLB-C YPSLB Gemolong sebagai lembaga pendidikan luar biasa yang unggul dalam pengembangan potensi anak berkebutuhan khusus secara optimal, berkarakter, mandiri, dan berprestasi.',
-    'misi' => 'Menyelenggarakan pendidikan yang berkualitas, mengembangkan potensi akademik dan non-akademik, serta membangun karakter, serta menjalin kerjasama dengan berbagai pihak.',
-    'profil_kepala_sekolah' => 'Kepala sekolah yang inovatif, berdedikasi, dan berpengalaman dalam dunia pendidikan khusus.',
-    'sambutan' => 'Pendidikan bukan sekadar menuntut ilmu, melainkan proses membentuk karakter, membangun mimpi, dan memberdayakan generasi yang akan membawa perubahan bagi bangsa. Di SLB-C YPSLB Gemolong, kami berkomitmen untuk menjadi rumah kedua bagi setiap siswa agar mereka tumbuh menjadi pribadi yang unggul dan berkarakter.',
-    'alamat' => 'Jl. Pendidikan No. 1, Gemolong, Kabupaten Sragen, Jawa Tengah',
-    'telepon' => '(0271) 123456',
-    'email' => 'info@slbc-gemolong.sch.id',
-    'gambar_gedung' => 'https://picsum.photos/seed/school-building-front/700/525.jpg',
-    'struktur_organisasi' => 'https://picsum.photos/seed/struktur-organisasi/1000/600.jpg',
-    'dasar_hukum' => '1. Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional
-2. Peraturan Pemerintah Nomor 19 Tahun 2005 tentang Pendidikan Anak Berkebutuhan Khusus
-3. Peraturan Menteri Pendidikan dan Kebudayaan Nomor 70 Tahun 2013 tentang Pendidikan Dasar
-4. Peraturan Daerah Provinsi Jawa Tengah Nomor 12 Tahun 2018 tentang Pendidikan Luar Biasa
-5. Akta Notaris Pendirian Yayasan YPSLB Gemolong Nomor 01 Tanggal 01 Januari 2000',
-    'nama_kepala_sekolah' => 'Drs. Ahmad Sudrajat, M.Pd',
-    'foto_kepala_sekolah' => 'https://picsum.photos/seed/kepsek-portrait/480/600.jpg',
-    'instagram' => 'https://instagram.com/slbcypslbgemolong',
-    'facebook' => 'https://facebook.com/slbcypslbgemolong',
-    'youtube' => 'https://youtube.com/@slbcypslbgemolong',
-    'tiktok' => 'https://tiktok.com/@slbcypslbgemolong',
-    'website' => 'https://slbc-gemolong.sch.id',
-    'maps_url' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.012345678901!2d110.98765432109876!3d-7.456789012345679!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a1234567890ab%3A0x123456789abcdef!2sSLB-C%20YPSLB%20Gemolong!5e0!3m2!1sid!2sid!4v1234567890123!5m2!1sid!2sid',
+    'akreditasi' => '',
+    'sejarah' => '',
+    'visi' => '',
+    'misi' => '',
+    'profil_kepala_sekolah' => '',
+    'sambutan' => '',
+    'alamat' => '',
+    'telepon' => '',
+    'email' => '',
+    'gambar_gedung' => '',
+    'struktur_organisasi' => '',
+    'dasar_hukum' => '',
+    'nama_kepala_sekolah' => '',
+    'foto_kepala_sekolah' => '',
+    'instagram' => '',
+    'facebook' => '',
+    'youtube' => '',
+    'tiktok' => '',
+    'website' => '',
+    'maps_url' => '',
     'video_profil' => '',
     'logo_url' => ''
 ];
-$profil = $defaultProfil;
 
+$profil = $defaultProfil;
 if ($supabaseConnected) {
     $profilResult = supabaseSelect('profil_sekolah', ['id' => 'eq.1', 'limit' => 1]);
     if ($profilResult['success'] && !empty($profilResult['data'])) {
         $dbProfil = $profilResult['data'][0];
-        // Merge with default, ensuring all keys exist
-        $profil = [
-            'nama_sekolah' => $dbProfil['nama_sekolah'] ?? $defaultProfil['nama_sekolah'],
-            'akreditasi' => $dbProfil['akreditasi'] ?? $defaultProfil['akreditasi'],
-            'sejarah' => $dbProfil['sejarah'] ?? $defaultProfil['sejarah'],
-            'visi' => $dbProfil['visi'] ?? $defaultProfil['visi'],
-            'misi' => $dbProfil['misi'] ?? $defaultProfil['misi'],
-            'profil_kepala_sekolah' => $dbProfil['profil_kepala_sekolah'] ?? $defaultProfil['profil_kepala_sekolah'],
-            'sambutan' => $dbProfil['sambutan'] ?? $defaultProfil['sambutan'],
-            'alamat' => $dbProfil['alamat'] ?? $defaultProfil['alamat'],
-            'telepon' => $dbProfil['telepon'] ?? $defaultProfil['telepon'],
-            'email' => $dbProfil['email'] ?? $defaultProfil['email'],
-            'gambar_gedung' => $dbProfil['gambar_gedung'] ?? $defaultProfil['gambar_gedung'],
-            'logo_url' => $dbProfil['logo_url'] ?? $defaultProfil['logo_url'],
-            'struktur_organisasi' => $dbProfil['struktur_organisasi'] ?? $defaultProfil['struktur_organisasi'],
-            'dasar_hukum' => $dbProfil['dasar_hukum'] ?? $defaultProfil['dasar_hukum'],
-            'nama_kepala_sekolah' => $dbProfil['nama_kepala_sekolah'] ?? $defaultProfil['nama_kepala_sekolah'],
-            'foto_kepala_sekolah' => $dbProfil['foto_kepala_sekolah'] ?? $defaultProfil['foto_kepala_sekolah'],
-            'instagram' => $dbProfil['instagram'] ?? $defaultProfil['instagram'],
-            'facebook' => $dbProfil['facebook'] ?? $defaultProfil['facebook'],
-            'youtube' => $dbProfil['youtube'] ?? $defaultProfil['youtube'],
-            'tiktok' => $dbProfil['tiktok'] ?? $defaultProfil['tiktok'],
-            'website' => $dbProfil['website'] ?? $defaultProfil['website'],
-            'maps_url' => $dbProfil['maps_url'] ?? $defaultProfil['maps_url'],
-            'video_profil' => $dbProfil['video_profil'] ?? $defaultProfil['video_profil']
-        ];
+        foreach ($defaultProfil as $key => $value) {
+            if (isset($dbProfil[$key]) && trim((string)$dbProfil[$key]) !== '') {
+                $profil[$key] = $dbProfil[$key];
+            }
+        }
+    } else {
+        // If row not found, try latest row
+        $profilResult = supabaseSelect('profil_sekolah', ['order' => 'created_at.desc', 'limit' => 1]);
+        if ($profilResult['success'] && !empty($profilResult['data'])) {
+            $dbProfil = $profilResult['data'][0];
+            foreach ($defaultProfil as $key => $value) {
+                if (isset($dbProfil[$key]) && trim((string)$dbProfil[$key]) !== '') {
+                    $profil[$key] = $dbProfil[$key];
+                }
+            }
+        }
     }
-    $checkResult = $profilResult; // For debug info
 }
+$checkResult = null;
 
 // Handle save
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -144,73 +131,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Check if profile exists
         $checkResult = supabaseSelect('profil_sekolah', ['id' => 'eq.1', 'limit' => 1]);
         $profileExists = $checkResult['success'] && !empty($checkResult['data']);
+        $payload = $data;
+        // Filter payload to only columns that actually exist in the database to avoid PostgREST column errors.
+        $filteredPayload = [];
+        $missingColumns = [];
+        foreach ($payload as $col => $val) {
+          // Always allow 'id'
+          if ($col === 'id') { $filteredPayload[$col] = $val; continue; }
+          if (function_exists('supabaseHasColumn') && supabaseHasColumn('profil_sekolah', $col)) {
+            $filteredPayload[$col] = $val;
+          } else {
+            $missingColumns[] = $col;
+          }
+        }
+        if (!empty($missingColumns)) {
+          $saveError = 'Beberapa kolom tidak ada di database dan akan diabaikan: ' . implode(', ', $missingColumns) . '.';
+        }
+        // Use filtered payload for persistence
+        $payload = $filteredPayload;
+
+        // If payload contains only 'id' or is empty, abort save — nothing to persist
+        $payloadKeys = array_keys($payload);
+        if (count(array_filter($payloadKeys, function($k){ return $k !== 'id'; })) === 0) {
+          $error = 'Tidak ada kolom valid untuk disimpan ke database.' . (!empty($saveError) ? ' ' . $saveError : '');
+          $result = ['success' => false, 'error' => $error];
+        }
+        $saveError = '';
+
+        $persistProfile = function($operation, $payload) use (&$saveError) {
+            $result = $operation === 'update'
+                ? supabaseUpdate('profil_sekolah', $payload, 1)
+                : supabaseInsert('profil_sekolah', $payload);
+
+            if ($result['success']) {
+                return $result;
+            }
+
+            $errStr = strtolower($result['error'] ?? json_encode($result));
+            if (strpos($errStr, 'logo_url') !== false || strpos($errStr, 'column') !== false) {
+                unset($payload['logo_url']);
+                $retry = $operation === 'update'
+                    ? supabaseUpdate('profil_sekolah', $payload, 1)
+                    : supabaseInsert('profil_sekolah', $payload);
+                if ($retry['success']) {
+                    $saveError = 'Profil disimpan, tetapi kolom `logo_url` belum ada di database. Jalankan SQL untuk menambahkannya jika ingin menyimpan logo.';
+                    return $retry;
+                }
+                $saveError = $retry['error'] ?? 'Gagal menyimpan profil.';
+                return $retry;
+            }
+
+            $saveError = $result['error'] ?? 'Gagal menyimpan profil.';
+            return $result;
+        };
         
         if ($profileExists) {
-            $result = supabaseUpdate('profil_sekolah', $data, 1);
-            // Retry without logo_url if schema doesn't have that column
-            if (!$result['success'] && isset($data['logo_url'])) {
-                $errStr = strtolower($result['error'] ?? json_encode($result));
-                if (strpos($errStr, 'logo_url') !== false || strpos($errStr, 'column') !== false) {
-                    $backupLogo = $data['logo_url'];
-                    unset($data['logo_url']);
-                    $retry = supabaseUpdate('profil_sekolah', $data, 1);
-                    if ($retry['success']) {
-                        $result = $retry;
-                        $error = 'Profil diperbarui, tetapi kolom `logo_url` belum ada di database. Jalankan SQL untuk menambahkannya jika ingin menyimpan logo.';
-                    } else {
-                        $result = $retry;
-                    }
-                }
-            }
+            $result = $persistProfile('update', $payload);
         } else {
-            $result = supabaseInsert('profil_sekolah', $data);
-            // Retry insert without logo_url if schema missing column
-            if (!$result['success'] && isset($data['logo_url'])) {
-                $errStr = strtolower($result['error'] ?? json_encode($result));
-                if (strpos($errStr, 'logo_url') !== false || strpos($errStr, 'column') !== false) {
-                    unset($data['logo_url']);
-                    $retry = supabaseInsert('profil_sekolah', $data);
-                    if ($retry['success']) {
-                        $result = $retry;
-                        $error = 'Profil dibuat, tetapi kolom `logo_url` belum ada di database. Jalankan SQL untuk menambahkannya jika ingin menyimpan logo.';
-                    } else {
-                        $result = $retry;
-                    }
-                }
-            }
+            $result = $persistProfile('insert', $payload);
         }
         
         if ($result['success']) {
             $success = 'Profil berhasil diperbarui!';
-            // Refresh data
-            $profilResult = supabaseSelect('profil_sekolah', ['id' => 'eq.1', 'limit' => 1]);
-            if ($profilResult['success'] && !empty($profilResult['data'])) {
-                $dbProfil = $profilResult['data'][0];
-                $profil = [
-                    'nama_sekolah' => $dbProfil['nama_sekolah'] ?? $defaultProfil['nama_sekolah'],
-                    'akreditasi' => $dbProfil['akreditasi'] ?? $defaultProfil['akreditasi'],
-                    'sejarah' => $dbProfil['sejarah'] ?? $defaultProfil['sejarah'],
-                    'visi' => $dbProfil['visi'] ?? $defaultProfil['visi'],
-                    'misi' => $dbProfil['misi'] ?? $defaultProfil['misi'],
-                    'profil_kepala_sekolah' => $dbProfil['profil_kepala_sekolah'] ?? $defaultProfil['profil_kepala_sekolah'],
-                    'sambutan' => $dbProfil['sambutan'] ?? $defaultProfil['sambutan'],
-                    'alamat' => $dbProfil['alamat'] ?? $defaultProfil['alamat'],
-                    'telepon' => $dbProfil['telepon'] ?? $defaultProfil['telepon'],
-                    'email' => $dbProfil['email'] ?? $defaultProfil['email'],
-                    'gambar_gedung' => $dbProfil['gambar_gedung'] ?? $defaultProfil['gambar_gedung'],
-                    'struktur_organisasi' => $dbProfil['struktur_organisasi'] ?? $defaultProfil['struktur_organisasi'],
-                    'dasar_hukum' => $dbProfil['dasar_hukum'] ?? $defaultProfil['dasar_hukum'],
-                    'nama_kepala_sekolah' => $dbProfil['nama_kepala_sekolah'] ?? $defaultProfil['nama_kepala_sekolah'],
-                    'foto_kepala_sekolah' => $dbProfil['foto_kepala_sekolah'] ?? $defaultProfil['foto_kepala_sekolah'],
-                    'instagram' => $dbProfil['instagram'] ?? $defaultProfil['instagram'],
-                    'facebook' => $dbProfil['facebook'] ?? $defaultProfil['facebook'],
-                    'youtube' => $dbProfil['youtube'] ?? $defaultProfil['youtube'],
-                    'tiktok' => $dbProfil['tiktok'] ?? $defaultProfil['tiktok'],
-                    'website' => $dbProfil['website'] ?? $defaultProfil['website'],
-                    'maps_url' => $dbProfil['maps_url'] ?? $defaultProfil['maps_url'],
-                    'video_profil' => $dbProfil['video_profil'] ?? $defaultProfil['video_profil'],
-                    'logo_url' => $dbProfil['logo_url'] ?? $defaultProfil['logo_url']
-                ];
+            if ($saveError !== '') {
+                $error = $saveError;
+            }
+            // Refresh data from DB while preserving default keys.
+            $profil = $defaultProfil;
+            if ($supabaseConnected) {
+                $profilResult = supabaseSelect('profil_sekolah', ['id' => 'eq.1', 'limit' => 1]);
+                if (!($profilResult['success'] && !empty($profilResult['data']))) {
+                    $profilResult = supabaseSelect('profil_sekolah', ['order' => 'created_at.desc', 'limit' => 1]);
+                }
+                if ($profilResult['success'] && !empty($profilResult['data'])) {
+                    $dbProfil = $profilResult['data'][0];
+                    foreach ($defaultProfil as $key => $value) {
+                        if (isset($dbProfil[$key]) && trim((string)$dbProfil[$key]) !== '') {
+                            $profil[$key] = $dbProfil[$key];
+                        }
+                    }
+                }
             }
         } else {
             $error = 'Gagal memperbarui profil! ' . ($result['error'] ?? json_encode($result));
@@ -241,11 +241,12 @@ include 'components/sidebar.php';
         
         <div class="bg-white rounded-lg border border-[#E8E4D9] shadow-sm overflow-hidden">
           <div class="p-6 border-b border-[#E8E4D9]">
-            <h3 class="font-semibold text-[#1F2D26]">Edit Profil Sekolah</h3>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <h3 class="font-semibold text-[#1F2D26]">Edit Profil Sekolah</h3>
+              <button type="submit" form="profilForm" class="bg-[#3E6B4E] text-white text-xs font-bold px-8 py-3 rounded hover:bg-[#2F5B41] transition-colors uppercase tracking-widest" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>Simpan Profil</button>
+            </div>
           </div>
-          <form action="" method="POST" enctype="multipart/form-data" class="p-6 space-y-8">
-            
-            <!-- Informasi Dasar Sekolah -->
+          <form id="profilForm" action="" method="POST" enctype="multipart/form-data" class="p-6 space-y-8">
             <div>
               <h4 class="text-sm font-semibold mb-4 text-[#1F2D26] border-b pb-2">Informasi Dasar Sekolah</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -305,9 +306,9 @@ include 'components/sidebar.php';
             
             <!-- Sejarah -->
             <div>
-              <h4 class="text-sm font-semibold mb-4 text-[#1F2D26] border-b pb-2">Sejarah</h4>
+              <h4 class="text-sm font-semibold mb-4 text-[#1F2D26] border-b pb-2">Latar Belakang</h4>
               <div class="mb-6">
-                <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Sejarah Sekolah</label>
+                <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Latar Belakang</label>
                 <textarea name="sejarah" rows="6" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm resize-none" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>><?php echo htmlspecialchars($profil['sejarah']); ?></textarea>
               </div>
             </div>
@@ -344,6 +345,10 @@ include 'components/sidebar.php';
                   <div class="mt-4">
                     <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Profil Kepala Sekolah</label>
                     <textarea name="profil_kepala_sekolah" rows="6" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm resize-none" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>><?php echo htmlspecialchars($profil['profil_kepala_sekolah']); ?></textarea>
+                  </div>
+                  <div class="mt-4">
+                    <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Sambutan Kepala Sekolah</label>
+                    <textarea name="sambutan" rows="8" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm resize-none" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>><?php echo htmlspecialchars($profil['sambutan']); ?></textarea>
                   </div>
                   <div class="mt-4">
                     <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Foto Kepala Sekolah (Pilih File)</label>
@@ -431,9 +436,6 @@ include 'components/sidebar.php';
               </div>
             </div>
             
-            <div class="flex justify-end pt-4 border-t border-[#E8E4D9]">
-              <button type="submit" class="bg-[#3E6B4E] text-white text-xs font-bold px-8 py-3 rounded hover:bg-[#2F5B41] transition-colors uppercase tracking-widest" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>Simpan Profil</button>
-            </div>
           </form>
         </div>
       </div>

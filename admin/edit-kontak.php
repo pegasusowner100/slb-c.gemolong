@@ -1,10 +1,11 @@
 
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
 
-$title = "Edit Kontak — SLB-C YPSLB Gemolong";
+$title = "Edit Kontak — SLB BC KARYA SEJAHTERA";
 $page_title = "Edit Kontak";
 $success = '';
 $error = '';
@@ -44,13 +45,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $checkResult = supabaseSelect('profil_sekolah', ['order' => 'created_at.desc', 'limit' => 1]);
         $exists = $checkResult['success'] && !empty($checkResult['data']);
+        $persistKontakt = function($payload, $existingId = null) {
+            if ($existingId !== null) {
+                return supabaseUpdate('profil_sekolah', $payload, $existingId);
+            }
+            return supabaseInsert('profil_sekolah', $payload);
+        };
         
         if ($exists) {
             $existingId = $checkResult['data'][0]['id'];
-            $result = supabaseUpdate('profil_sekolah', $data, $existingId);
+            $result = $persistKontakt($data, $existingId);
         } else {
             $data['created_at'] = date('c');
-            $result = supabaseInsert('profil_sekolah', $data);
+            $result = $persistKontakt($data);
         }
         
         if ($result['success']) {

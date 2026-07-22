@@ -1,9 +1,10 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/config.php';
 require_once '../includes/supabase.php';
 
-$title = "Admin Login — SLB-C YPSLB Gemolong";
+$title = "Admin Login — SLB BC KARYA SEJAHTERA";
 $error = '';
 
 // If already logged in, redirect to dashboard
@@ -62,6 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'nama' => 'Administrator',
                     'role' => 'superadmin'
                 ];
+
+                // Jika tabel admin kosong dan Supabase terhubung, buat akun tersebut di database
+                if ($supabaseConnected && !empty($res) && $res['success'] && empty($res['data'])) {
+                    supabaseInsert('admin', [
+                        'username' => ADMIN_USERNAME,
+                        'password' => password_hash($password, PASSWORD_BCRYPT)
+                    ]);
+                }
             }
         }
 

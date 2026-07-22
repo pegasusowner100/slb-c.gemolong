@@ -22,9 +22,10 @@ include '../components/head.php';
     <section id="layanan" class="py-24 bg-brand-bg/50">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16">
-          <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-label mb-4">Layanan</span>
-          <h2 class="font-serif text-3xl md:text-4xl text-brand-dark mb-6">Layanan Online</h2>
-          <div class="w-20 h-1 bg-brand-accent mx-auto"></div>
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Layanan</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Layanan Online</h2>
+          </div>
         </div>
 
         <div class="grid md:grid-cols-3 gap-8 mb-12">
@@ -52,7 +53,7 @@ include '../components/head.php';
               <iconify-icon icon="lucide:help-circle" class="mx-auto group-hover:scale-110 transition-transform" style="font-size: 64px; color: white;"></iconify-icon>
             </div>
             <h3 class="font-serif text-lg text-white mb-1">FAQ</h3>
-            <p class="text-purple-100 text-xs">Pertanyaan yang sering diajukan</p>
+            <p class="text-purple-100 text-xs">Pertanyaan Sudah Diajukan</p>
           </a>
         </div>
       </div>
@@ -68,25 +69,34 @@ include '../components/head.php';
           </button>
         </div>
         <div class="p-6">
-          <form id="form-surat" class="space-y-6">
+          <!-- Alert Box -->
+          <div id="suratAlert" class="hidden rounded-lg p-4 flex items-start gap-3 border mb-6">
+            <iconify-icon id="suratAlertIcon" icon="lucide:alert-circle" class="w-6 h-6 flex-shrink-0 mt-0.5"></iconify-icon>
+            <div>
+              <p id="suratAlertText" class="font-semibold text-sm"></p>
+            </div>
+          </div>
+
+          <!-- Step 1: Request OTP -->
+          <form id="form-surat-request-otp" class="space-y-6">
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap</label>
-              <input type="text" name="nama" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Masukkan nama lengkap Anda">
+              <input type="text" id="surat_nama" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Masukkan nama lengkap Anda">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-              <input type="email" name="email" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="nama@email.com">
+              <input type="email" id="surat_email" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="nama@email.com">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Nomor HP/WA</label>
-              <input type="tel" name="no_hp" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="081234567890">
+              <input type="tel" id="surat_no_hp" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="081234567890">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Jenis Surat</label>
-              <select id="jenis_surat" name="jenis_surat" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+              <select id="jenis_surat" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                 <option value="">-- Pilih Jenis Surat --</option>
                 <option value="Surat Keterangan">Surat Keterangan</option>
                 <option value="Surat Permohonan Mutasi">Surat Permohonan Mutasi</option>
@@ -98,20 +108,54 @@ include '../components/head.php';
 
             <div id="lainnya_container" class="hidden">
               <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Surat Lainnya</label>
-              <input type="text" name="jenis_surat_lainnya" id="jenis_surat_lainnya" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Masukkan jenis surat lainnya">
+              <input type="text" id="jenis_surat_lainnya" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Masukkan jenis surat lainnya">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan / Pesan</label>
-              <textarea name="keterangan" rows="4" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Masukkan keterangan atau pesan Anda..."></textarea>
+              <textarea id="surat_keterangan" rows="4" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Masukkan keterangan atau pesan Anda..."></textarea>
             </div>
 
             <div class="pt-4 flex gap-3">
               <button type="button" onclick="closeModal('modal-surat')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 px-6 rounded-lg transition-all duration-300">
                 Batal
               </button>
-              <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
-                <iconify-icon icon="lucide:send"></iconify-icon> Kirim
+              <button type="submit" id="btnSuratRequestOtp" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                <iconify-icon icon="lucide:send"></iconify-icon> Kirim Kode Verifikasi
+              </button>
+            </div>
+          </form>
+
+          <!-- Step 2: Verify OTP -->
+          <form id="form-surat-verify-otp" class="hidden space-y-6">
+            <div class="text-center py-2">
+              <iconify-icon icon="lucide:mail-check" class="text-5xl text-blue-600 mb-3"></iconify-icon>
+              <p class="text-sm text-gray-600">Masukkan 6 digit kode verifikasi yang telah dikirim ke email Anda.</p>
+              
+              <!-- Local testing preview -->
+              <div id="otpSuratDeveloperPreview" class="hidden mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-mono">
+                [DEVELOPER ONLY] OTP: <span id="developerSuratOtpCode" class="font-bold text-sm"></span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide text-center">Kode Verifikasi</label>
+              <input
+                type="text"
+                id="input_surat_otp"
+                placeholder="123456"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                class="w-full px-5 py-3 border-2 border-gray-300 rounded-lg text-center font-mono text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                required>
+            </div>
+
+            <div class="pt-4 flex gap-3">
+              <button type="button" id="btnSuratBackToStep1" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 px-6 rounded-lg transition-all duration-300">
+                Kembali
+              </button>
+              <button type="submit" id="btnSuratVerifyOtp" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                <iconify-icon icon="lucide:check-circle"></iconify-icon> Verifikasi & Kirim
               </button>
             </div>
           </form>
@@ -147,7 +191,7 @@ include '../components/head.php';
     <div id="modal-faq" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden">
       <div class="bg-white rounded-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b border-brand-border/30 flex items-center justify-between">
-          <h3 class="text-xl font-semibold text-brand-dark">Pertanyaan yang Sering Diajukan</h3>
+          <h3 class="text-xl font-semibold text-brand-dark">Pertanyaan Sudah Diajukan</h3>
           <button onclick="closeModal('modal-faq')" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
             <iconify-icon icon="lucide:x" class="w-6 h-6"></iconify-icon>
           </button>
@@ -229,35 +273,147 @@ include '../components/head.php';
       });
     }
 
-    // Surat Form Submit - save to Supabase via server endpoint
-    const formSurat = document.getElementById('form-surat');
-    if (formSurat) {
-      formSurat.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-        // Determine jenis surat final
-        if (formData.get('jenis_surat') === 'Lainnya') {
-          formData.set('jenis_surat', formData.get('jenis_surat_lainnya') || 'Lainnya');
-        }
-
-        fetch('<?= BASE_URL ?>/pages/submit-surat.php', {
-          method: 'POST',
-          body: formData,
-        }).then(r => r.json()).then(resp => {
-          if (resp.success) {
-            alert('Permohonan surat berhasil dikirim. Terima kasih.');
-            closeModal('modal-surat');
-            formSurat.reset();
-          } else {
-            alert('Gagal mengirim: ' + (resp.message || 'Unknown'));
-          }
-        }).catch(err => {
-          console.error(err);
-          alert('Terjadi kesalahan, coba lagi.');
-        });
-      });
+    // Helper functions for Surat OTP steps
+    function showSuratStep(stepNum) {
+      if (stepNum === 1) {
+        document.getElementById('form-surat-request-otp').classList.remove('hidden');
+        document.getElementById('form-surat-verify-otp').classList.add('hidden');
+      } else {
+        document.getElementById('form-surat-request-otp').classList.add('hidden');
+        document.getElementById('form-surat-verify-otp').classList.remove('hidden');
+        document.getElementById('input_surat_otp').value = '';
+      }
     }
+
+    function showSuratAlert(type, message) {
+      const alertBox = document.getElementById('suratAlert');
+      const alertIcon = document.getElementById('suratAlertIcon');
+      const alertText = document.getElementById('suratAlertText');
+
+      alertText.textContent = message;
+      if (type === 'success') {
+        alertBox.className = "rounded-lg p-4 flex items-start gap-3 border bg-green-50 border-green-500 text-green-700 mb-6";
+        alertIcon.setAttribute('icon', 'lucide:check-circle');
+      } else {
+        alertBox.className = "rounded-lg p-4 flex items-start gap-3 border bg-red-50 border-red-500 text-red-700 mb-6";
+        alertIcon.setAttribute('icon', 'lucide:alert-circle');
+      }
+      alertBox.classList.remove('hidden');
+    }
+
+    function hideSuratAlert() {
+      document.getElementById('suratAlert').classList.add('hidden');
+    }
+
+    // Modal Close Wrapper
+    const origCloseModal = closeModal;
+    closeModal = function(id) {
+      origCloseModal(id);
+      if (id === 'modal-surat') {
+        document.getElementById('form-surat-request-otp').reset();
+        document.getElementById('form-surat-verify-otp').reset();
+        showSuratStep(1);
+        hideSuratAlert();
+      }
+    }
+
+    // Go back to step 1
+    document.getElementById('btnSuratBackToStep1')?.addEventListener('click', function() {
+      showSuratStep(1);
+      hideSuratAlert();
+    });
+
+    // Step 1 Submit: Request OTP
+    document.getElementById('form-surat-request-otp')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nama = document.getElementById('surat_nama').value;
+      const email = document.getElementById('surat_email').value;
+      const no_hp = document.getElementById('surat_no_hp').value;
+      const jenis_surat = document.getElementById('jenis_surat').value;
+      const jenis_surat_lainnya = document.getElementById('jenis_surat_lainnya').value;
+      const keterangan = document.getElementById('surat_keterangan').value;
+      const btn = document.getElementById('btnSuratRequestOtp');
+
+      btn.disabled = true;
+      btn.innerHTML = '<iconify-icon icon="lucide:loader-2" class="animate-spin text-base"></iconify-icon> Memproses...';
+      hideSuratAlert();
+
+      const formData = new FormData();
+      formData.append('action', 'request_otp');
+      formData.append('nama', nama);
+      formData.append('email', email);
+      formData.append('no_hp', no_hp);
+      formData.append('jenis_surat', jenis_surat);
+      formData.append('jenis_surat_lainnya', jenis_surat_lainnya);
+      formData.append('keterangan', keterangan);
+
+      fetch('<?= BASE_URL ?>/pages/submit-surat.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:send" class="text-base"></iconify-icon> Kirim Kode Verifikasi';
+
+        if (data.success) {
+          showSuratAlert('success', data.message);
+          showSuratStep(2);
+          if (data.otp_preview) {
+            document.getElementById('developerSuratOtpCode').textContent = data.otp_preview;
+            document.getElementById('otpSuratDeveloperPreview').classList.remove('hidden');
+          }
+        } else {
+          showSuratAlert('error', data.message);
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:send" class="text-base"></iconify-icon> Kirim Kode Verifikasi';
+        showSuratAlert('error', 'Terjadi kesalahan sistem, silakan coba lagi.');
+      });
+    });
+
+    // Step 2 Submit: Verify OTP & Save
+    document.getElementById('form-surat-verify-otp')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const otp = document.getElementById('input_surat_otp').value;
+      const btn = document.getElementById('btnSuratVerifyOtp');
+
+      btn.disabled = true;
+      btn.innerHTML = '<iconify-icon icon="lucide:loader-2" class="animate-spin text-base"></iconify-icon> Memverifikasi...';
+      hideSuratAlert();
+
+      const formData = new FormData();
+      formData.append('action', 'verify_otp');
+      formData.append('otp', otp);
+
+      fetch('<?= BASE_URL ?>/pages/submit-surat.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon> Verifikasi & Kirim';
+
+        if (data.success) {
+          showSuratAlert('success', data.message);
+          setTimeout(() => {
+            closeModal('modal-surat');
+          }, 2000);
+        } else {
+          showSuratAlert('error', data.message);
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon> Verifikasi & Kirim';
+        showSuratAlert('error', 'Terjadi kesalahan sistem, silakan coba lagi.');
+      });
+    });
   </script>
 </body>
 </html>

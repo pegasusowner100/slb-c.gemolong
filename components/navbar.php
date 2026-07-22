@@ -15,12 +15,22 @@ $mottoText = htmlspecialchars(trim($hero['motto'] ?? 'Mandiri berkarakter berdik
   <!-- ========== NAVBAR ========== -->
   <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 h-20 transition-all duration-300 bg-brand-bg shadow-md border-b border-brand-border/50">
     <div class="w-full max-w-none px-6 lg:px-10 h-full flex items-center justify-between">
-      <?php $navLogo = !empty($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] : BASE_URL . '/assets/images/JATENG JR.jpg'; ?>
-      <a href="<?= BASE_URL ?>/index.php" class="flex items-center gap-3">
+      <?php
+        $navLogo = !empty($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] : BASE_URL . '/assets/images/JATENG JR.jpg';
+        $navSchoolName = mb_strtoupper(trim($profilSekolah['nama_sekolah'] ?? SITE_NAME), 'UTF-8');
+      ?>
+      <a href="<?= BASE_URL ?>/admin/index.php" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3">
         <img src="<?php echo htmlspecialchars($navLogo); ?>" alt="Logo Sekolah" class="w-16 h-16 rounded-full object-cover" onerror="this.src='https://picsum.photos/seed/logo/100/100'">
         <div>
-          <span class="font-serif text-lg font-semibold tracking-tight text-brand-dark"><?php echo htmlspecialchars(SITE_NAME); ?></span>
-          <span class="block text-[10px] tracking-widest uppercase text-brand-muted -mt-0.5"><?php echo $mottoText; ?></span>
+          <span class="font-serif text-lg font-semibold tracking-tight logo-text-sweep block"><?php echo htmlspecialchars($navSchoolName); ?></span>
+          <span class="block text-[10px] tracking-widest uppercase text-brand-muted -mt-0.5">
+            <?php 
+            $mottoWords = explode(' ', $mottoText);
+            foreach ($mottoWords as $index => $word) {
+                echo '<span class="inline-block animate-pop-in" style="animation-delay: ' . ($index * 0.15) . 's; opacity: 0; animation-fill-mode: forwards;">' . htmlspecialchars($word) . '</span> ';
+            }
+            ?>
+          </span>
         </div>
       </a>
       <div class="hidden lg:flex items-center gap-8">
@@ -38,6 +48,7 @@ $mottoText = htmlspecialchars(trim($hero['motto'] ?? 'Mandiri berkarakter berdik
               <a href="<?= BASE_URL ?>/pages/profil.php#visimisi" class="block px-4 py-2 text-sm text-brand-muted hover:text-brand-accent hover:bg-brand-bg/50 transition-colors">Visi Misi</a>
               <a href="<?= BASE_URL ?>/pages/profil.php#struktur" class="block px-4 py-2 text-sm text-brand-muted hover:text-brand-accent hover:bg-brand-bg/50 transition-colors">Struktur Organisasi</a>
               <a href="<?= BASE_URL ?>/pages/profil.php#sumberdaya" class="block px-4 py-2 text-sm text-brand-muted hover:text-brand-accent hover:bg-brand-bg/50 transition-colors">Sumber Daya Manusia</a>
+              <a href="<?= BASE_URL ?>/pages/prestasi.php" class="block px-4 py-2 text-sm text-brand-muted hover:text-brand-accent hover:bg-brand-bg/50 transition-colors">Prestasi</a>
             </div>
           </div>
         </div>
@@ -96,6 +107,7 @@ $mottoText = htmlspecialchars(trim($hero['motto'] ?? 'Mandiri berkarakter berdik
             <a href="<?= BASE_URL ?>/pages/profil.php#visimisi" class="mobile-link text-sm text-brand-muted hover:text-brand-accent block py-1">Visi Misi</a>
             <a href="<?= BASE_URL ?>/pages/profil.php#struktur" class="mobile-link text-sm text-brand-muted hover:text-brand-accent block py-1">Struktur Organisasi</a>
             <a href="<?= BASE_URL ?>/pages/profil.php#sumberdaya" class="mobile-link text-sm text-brand-muted hover:text-brand-accent block py-1">Sumber Daya Manusia</a>
+            <a href="<?= BASE_URL ?>/pages/prestasi.php" class="mobile-link text-sm text-brand-muted hover:text-brand-accent block py-1">Prestasi</a>
           </div>
         </div>
         

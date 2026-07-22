@@ -22,9 +22,9 @@ if ($supabaseConnected) {
         
         $beritaContoh = [
             [
-                'judul' => 'Selamat Datang di Website SLB-C YPSLB Gemolong',
+                'judul' => 'Selamat Datang di Website SLB BC KARYA SEJAHTERA',
                 'slug' => 'selamat-datang',
-                'konten' => 'Selamat datang di website resmi SLB-C YPSLB Gemolong. Website ini merupakan portal informasi untuk seluruh civitas akademika dan masyarakat umum.',
+                'konten' => 'Selamat datang di website resmi SLB BC KARYA SEJAHTERA. Website ini merupakan portal informasi untuk seluruh civitas akademika dan masyarakat umum.',
                 'gambar' => 'https://picsum.photos/seed/berita1/800/400.jpg',
                 'kategori' => 'Pengumuman',
                 'status' => 'published',
@@ -44,7 +44,7 @@ if ($supabaseConnected) {
             [
                 'judul' => 'Prestasi Siswa di Tingkat Provinsi',
                 'slug' => 'prestasi-provinsi',
-                'konten' => 'Alhamdulillah, siswa-siswi SLB-C YPSLB Gemolong berhasil meraih prestasi gemilang di tingkat provinsi!',
+                'konten' => 'Alhamdulillah, siswa-siswi SLB BC KARYA SEJAHTERA berhasil meraih prestasi gemilang di tingkat provinsi!',
                 'gambar' => 'https://picsum.photos/seed/berita3/800/400.jpg',
                 'kategori' => 'Prestasi',
                 'status' => 'published',
@@ -54,7 +54,7 @@ if ($supabaseConnected) {
             [
                 'judul' => 'Kegiatan Outbound Siswa',
                 'slug' => 'kegiatan-outbound',
-                'konten' => 'Serunya kegiatan outbound yang diikuti oleh seluruh siswa SLB-C YPSLB Gemolong!',
+                'konten' => 'Serunya kegiatan outbound yang diikuti oleh seluruh siswa SLB BC KARYA SEJAHTERA!',
                 'gambar' => 'https://picsum.photos/seed/berita4/800/400.jpg',
                 'kategori' => 'Kegiatan',
                 'status' => 'published',

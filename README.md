@@ -1,6 +1,6 @@
-# SLB-C YPSLB Gemolong - Website Sekolah
+# SLB BC KARYA SEJAHTERA - Website Sekolah
 
-Website resmi SLB-C YPSLB Gemolong dengan fitur lengkap untuk manajemen informasi sekolah.
+Website resmi SLB BC KARYA SEJAHTERA dengan fitur lengkap untuk manajemen informasi sekolah.
 
 ## 🚀 Fitur Utama
 
@@ -236,6 +236,6 @@ Untuk bantuan atau pertanyaan:
 
 ---
 
-**Dibuat dengan ❤️ untuk SLB-C YPSLB Gemolong**
+**Dibuat dengan ❤️ untuk SLB BC KARYA SEJAHTERA**
 
 Last Updated: 2026-06-08

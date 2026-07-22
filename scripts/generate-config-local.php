@@ -45,6 +45,7 @@ $replacements = [
     'CLOUDINARY_API_KEY' => $env['CLOUDINARY_API_KEY'] ?? null,
     'CLOUDINARY_API_SECRET' => $env['CLOUDINARY_API_SECRET'] ?? null,
     'CLOUDINARY_FOLDER' => $env['CLOUDINARY_FOLDER'] ?? null,
+    'CLOUDINARY_UPLOAD_PRESET' => $env['CLOUDINARY_UPLOAD_PRESET'] ?? null,
     'SUPABASE_STORAGE_BUCKET' => $env['SUPABASE_STORAGE_BUCKET'] ?? null,
     'ADMIN_USERNAME' => $env['ADMIN_USERNAME'] ?? null,
     'ADMIN_PASSWORD_SALT' => $env['ADMIN_PASSWORD_SALT'] ?? null,
@@ -65,7 +66,9 @@ if (file_put_contents($outPath, $template) === false) {
     exit(1);
 }
 
-@chown($outPath, posix_getuid());
+if (function_exists('posix_getuid')) {
+    @chown($outPath, posix_getuid());
+}
 @chmod($outPath, 0640);
 
 fwrite(STDOUT, "Generated includes/config.php from $envPath\n");

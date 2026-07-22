@@ -1,11 +1,12 @@
 
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Prestasi — SLB-C YPSLB Gemolong";
+$title = "Kelola Prestasi — SLB BC KARYA SEJAHTERA";
 $page_title = "Kelola Prestasi";
 $success = '';
 $error = '';

@@ -1,12 +1,13 @@
 
 
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Program Unggulan — SLB-C YPSLB Gemolong";
+$title = "Kelola Program Unggulan — SLB BC KARYA SEJAHTERA";
 $page_title = "Kelola Program Unggulan";
 $success = '';
 $error = '';
@@ -201,14 +202,7 @@ include 'components/sidebar.php';
                   <div class="flex items-center justify-between mb-2">
                     <h3 class="font-semibold text-lg text-[#1F2D26]"><?php echo htmlspecialchars($program['nama']); ?></h3>
                     <div class="flex items-center gap-2">
-                      <button onclick="openEditModal(
-                        '<?php echo htmlspecialchars($program['id']); ?>',
-                        '<?php echo addslashes(htmlspecialchars($program['icon'] ?? 'lucide:book-open')); ?>',
-                        '<?php echo addslashes(htmlspecialchars($program['nama'])); ?>',
-                        '<?php echo addslashes(htmlspecialchars($program['deskripsi'])); ?>',
-                        '<?php echo addslashes(htmlspecialchars($program['gambar'])); ?>',
-                        '<?php echo htmlspecialchars($program['urutan'] ?? 0); ?>'
-                      )" class="text-blue-500 hover:text-blue-700 transition-colors">
+                      <button onclick="openEditModal(this)" data-program="<?php echo base64_encode(json_encode([ 'id' => $program['id'], 'icon' => $program['icon'] ?? '', 'nama' => $program['nama'], 'deskripsi' => $program['deskripsi'], 'gambar' => $program['gambar'], 'urutan' => $program['urutan'] ?? 0 ])); ?>" class="text-blue-500 hover:text-blue-700 transition-colors">
                         <iconify-icon icon="lucide:edit"></iconify-icon>
                       </button>
                       <a href="?delete=<?php echo $program['id']; ?>" onclick="return confirm('Yakin ingin menghapus program ini?')" class="text-red-500 hover:text-red-700 transition-colors">
@@ -247,14 +241,7 @@ include 'components/sidebar.php';
                         <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($program['urutan']); ?></td>
                         <td class="px-4 py-4 text-center">
                           <div class="flex items-center justify-center gap-2">
-                            <button onclick="openEditModal(
-                              '<?php echo htmlspecialchars($program['id']); ?>',
-                              '<?php echo addslashes(htmlspecialchars($program['icon'] ?? 'lucide:book-open')); ?>',
-                              '<?php echo addslashes(htmlspecialchars($program['nama'])); ?>',
-                              '<?php echo addslashes(htmlspecialchars($program['deskripsi'])); ?>',
-                              '<?php echo addslashes(htmlspecialchars($program['gambar'])); ?>',
-                              '<?php echo htmlspecialchars($program['urutan'] ?? 0); ?>'
-                            )" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                            <button onclick="openEditModal(this)" data-program="<?php echo base64_encode(json_encode([ 'id' => $program['id'], 'icon' => $program['icon'] ?? '', 'nama' => $program['nama'], 'deskripsi' => $program['deskripsi'], 'gambar' => $program['gambar'], 'urutan' => $program['urutan'] ?? 0 ])); ?>" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
                               <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
                             </button>
                             <a href="?delete=<?php echo $program['id']; ?>" onclick="return confirm('Yakin ingin menghapus program ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
@@ -287,10 +274,56 @@ include 'components/sidebar.php';
           </button>
         </div>
         <form method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+          <input type="hidden" name="tambah_program" value="1">
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Icon (Lucide Icon Name)</label>
-            <input type="text" name="icon" value="lucide:book-open" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
-            <p class="text-xs text-[#9FB5A5] mt-1">Contoh: lucide:globe, lucide:cpu, dll. (Opsional)</p>
+            <div class="flex gap-2 mb-2">
+              <input type="text" name="icon" id="add_icon_input" oninput="updateIconPreview('add_icon_input', 'add_icon_preview')" placeholder="Contoh: lucide:globe" class="flex-1 px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
+              <div class="w-12 h-12 bg-[#F9F8F4] border border-[#E8E4D9] rounded flex items-center justify-center text-2xl text-[#3E6B4E] flex-shrink-0">
+                <iconify-icon id="add_icon_preview" icon="lucide:book-open"></iconify-icon>
+              </div>
+            </div>
+            <div class="p-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg">
+              <span class="block text-[10px] font-bold text-[#9FB5A5] uppercase mb-2">Pilih Ikon Cepat:</span>
+              <div class="grid grid-cols-6 gap-2">
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:book-open')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Pendidikan">
+                  <iconify-icon icon="lucide:book-open" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:award')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Prestasi">
+                  <iconify-icon icon="lucide:award" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:calendar')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Jadwal">
+                  <iconify-icon icon="lucide:calendar" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:graduation-cap')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kelulusan">
+                  <iconify-icon icon="lucide:graduation-cap" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:music')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Seni/Musik">
+                  <iconify-icon icon="lucide:music" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:activity')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Olahraga">
+                  <iconify-icon icon="lucide:activity" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:users')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Siswa/Guru">
+                  <iconify-icon icon="lucide:users" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:home')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kelas">
+                  <iconify-icon icon="lucide:home" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:heart')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Karakter">
+                  <iconify-icon icon="lucide:heart" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:wrench')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Vokasi">
+                  <iconify-icon icon="lucide:wrench" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:briefcase')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Karir">
+                  <iconify-icon icon="lucide:briefcase" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('add_icon_input', 'add_icon_preview', 'lucide:globe')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Dunia/Akademik">
+                  <iconify-icon icon="lucide:globe" class="text-lg"></iconify-icon>
+                </button>
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Nama Program</label>
@@ -332,11 +365,57 @@ include 'components/sidebar.php';
           </button>
         </div>
         <form method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+          <input type="hidden" name="edit_program" value="1">
           <input type="hidden" name="program_id" id="edit_program_id" value="">
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Icon (Lucide Icon Name)</label>
-            <input type="text" name="edit_icon" id="edit_icon" value="lucide:book-open" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
-            <p class="text-xs text-[#9FB5A5] mt-1">Contoh: lucide:globe, lucide:cpu, dll. (Opsional)</p>
+            <div class="flex gap-2 mb-2">
+              <input type="text" name="edit_icon" id="edit_icon" oninput="updateIconPreview('edit_icon', 'edit_icon_preview')" placeholder="Contoh: lucide:globe" class="flex-1 px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded focus:outline-none focus:border-[#3E6B4E] transition-colors text-sm">
+              <div class="w-12 h-12 bg-[#F9F8F4] border border-[#E8E4D9] rounded flex items-center justify-center text-2xl text-[#3E6B4E] flex-shrink-0">
+                <iconify-icon id="edit_icon_preview" icon="lucide:book-open"></iconify-icon>
+              </div>
+            </div>
+            <div class="p-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg">
+              <span class="block text-[10px] font-bold text-[#9FB5A5] uppercase mb-2">Pilih Ikon Cepat:</span>
+              <div class="grid grid-cols-6 gap-2">
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:book-open')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Pendidikan">
+                  <iconify-icon icon="lucide:book-open" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:award')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Prestasi">
+                  <iconify-icon icon="lucide:award" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:calendar')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Jadwal">
+                  <iconify-icon icon="lucide:calendar" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:graduation-cap')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kelulusan">
+                  <iconify-icon icon="lucide:graduation-cap" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:music')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Seni/Musik">
+                  <iconify-icon icon="lucide:music" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:activity')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Olahraga">
+                  <iconify-icon icon="lucide:activity" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:users')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Siswa/Guru">
+                  <iconify-icon icon="lucide:users" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:home')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Kelas">
+                  <iconify-icon icon="lucide:home" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:heart')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Karakter">
+                  <iconify-icon icon="lucide:heart" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:wrench')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Vokasi">
+                  <iconify-icon icon="lucide:wrench" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:briefcase')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Karir">
+                  <iconify-icon icon="lucide:briefcase" class="text-lg"></iconify-icon>
+                </button>
+                <button type="button" onclick="selectIcon('edit_icon', 'edit_icon_preview', 'lucide:globe')" class="p-2 bg-white rounded border border-[#E8E4D9] hover:bg-[#3E6B4E] hover:text-white hover:border-[#3E6B4E] flex items-center justify-center transition-colors" title="Dunia/Akademik">
+                  <iconify-icon icon="lucide:globe" class="text-lg"></iconify-icon>
+                </button>
+              </div>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Nama Program</label>
@@ -367,6 +446,19 @@ include 'components/sidebar.php';
   </div>
 
   <script>
+    function selectIcon(inputId, previewId, iconName) {
+      document.getElementById(inputId).value = iconName;
+      updateIconPreview(inputId, previewId);
+    }
+
+    function updateIconPreview(inputId, previewId) {
+      const inputVal = document.getElementById(inputId).value;
+      const previewEl = document.getElementById(previewId);
+      if (previewEl) {
+        previewEl.setAttribute('icon', inputVal || 'lucide:book-open');
+      }
+    }
+
     function previewGambar(event, previewId) {
       const previewDiv = document.getElementById(previewId);
       const file = event.target.files[0];
@@ -390,14 +482,30 @@ include 'components/sidebar.php';
       document.getElementById('modalProgram').classList.remove('hidden');
     }
 
-    function openEditModal(id, icon, nama, deskripsi, gambar, urutan) {
-      document.getElementById('edit_program_id').value = id;
-      document.getElementById('edit_icon').value = icon;
-      document.getElementById('edit_nama').value = nama;
-      document.getElementById('edit_deskripsi').value = deskripsi;
-      document.getElementById('edit_urutan').value = urutan;
+    function openEditModal(button) {
+      const raw = button.dataset.program;
+      let program = {
+        id: '',
+        icon: '',
+        nama: '',
+        deskripsi: '',
+        gambar: '',
+        urutan: 0
+      };
+      try {
+        program = JSON.parse(atob(raw));
+      } catch (err) {
+        console.error('Invalid program data', err, raw);
+      }
+
+      document.getElementById('edit_program_id').value = program.id;
+      document.getElementById('edit_icon').value = program.icon;
+      updateIconPreview('edit_icon', 'edit_icon_preview');
+      document.getElementById('edit_nama').value = program.nama;
+      document.getElementById('edit_deskripsi').value = program.deskripsi;
+      document.getElementById('edit_urutan').value = program.urutan;
       document.getElementById('editGambarPreview').innerHTML = `
-        <img src="${gambar}" alt="Current Image" class="w-full h-40 object-cover rounded border border-[#E8E4D9]">
+        <img src="${program.gambar}" alt="Current Image" class="w-full h-40 object-cover rounded border border-[#E8E4D9]">
       `;
       document.getElementById('modalEditProgram').classList.remove('hidden');
     }

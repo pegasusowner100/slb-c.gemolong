@@ -7,9 +7,9 @@ echo "<p>Supabase Connected: " . ($supabaseConnected ? 'Ya' : 'Tidak') . "</p>";
 if ($supabaseConnected) {
     $beritaContoh = [
         [
-            'judul' => 'Selamat Datang di Website SLB-C YPSLB Gemolong',
+            'judul' => 'Selamat Datang di Website SLB BC KARYA SEJAHTERA',
             'slug' => 'selamat-datang-' . time(),
-            'konten' => 'Selamat datang di website resmi SLB-C YPSLB Gemolong. Website ini merupakan portal informasi untuk seluruh civitas akademika dan masyarakat umum.',
+            'konten' => 'Selamat datang di website resmi SLB BC KARYA SEJAHTERA. Website ini merupakan portal informasi untuk seluruh civitas akademika dan masyarakat umum.',
             'gambar' => 'https://picsum.photos/seed/berita1/800/400.jpg',
             'kategori' => 'Pengumuman',
             'status' => 'published',

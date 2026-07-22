@@ -1,10 +1,11 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/supabase.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Video — " . SITE_NAME;
+$title = "Kelola Video — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Kelola Video";
 $success = '';
 $error = '';

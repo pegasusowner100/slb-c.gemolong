@@ -1,5 +1,6 @@
 
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
@@ -7,7 +8,7 @@ require_login();
 // detect AJAX requests
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
-$title = "Edit PPDB — SLB-C YPSLB Gemolong";
+$title = "Edit PPDB — SLB BC KARYA SEJAHTERA";
 $page_title = "Edit PPDB";
 $success = '';
 $error = '';

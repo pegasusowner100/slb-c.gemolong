@@ -1,11 +1,13 @@
 
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
+require_once '../includes/supabase_storage.php';
 // old visitor tracking removed
 require_login();
 
-$title = "Dashboard Admin — " . SITE_NAME;
+$title = "Dashboard Admin SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Dashboard";
 
 // Cek koneksi database
@@ -274,50 +276,7 @@ include 'components/sidebar.php';
     <?php include 'components/header.php'; ?>
     <div class="flex-1 overflow-y-auto p-8">
       <div class="max-w-7xl compact-cards">
-        <!-- Statistik Pengunjung: Total, Per Bulan, Top 3 Halaman (satu baris, soft colors) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
-          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <h4 class="text-sm font-semibold mb-2"><span class="inline-block bg-gradient-to-r from-sky-400 to-sky-600 text-white px-3 py-1 rounded-md">Total Kunjungan</span></h4>
-            <div class="text-4xl font-bold text-slate-900"><?php echo number_format($visitor_total); ?></div>
-            <p class="text-xs text-slate-500 mt-2">Semua waktu</p>
-          </div>
-
-          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <h4 class="text-sm font-semibold mb-4"><span class="inline-block bg-gradient-to-r from-emerald-400 to-emerald-600 text-white px-3 py-1 rounded-md">Kunjungan Per Bulan (Tahun Ini)</span></h4>
-            <div class="relative overflow-hidden p-3 rounded-lg" style="background-image: linear-gradient(to top, rgba(2,6,23,0.03) 1px, transparent 1px); background-size: 100% 20%;">
-              <div class="flex items-end gap-3 h-40">
-                <?php
-                  $max = max($visitor_month) ?: 1;
-                  for ($i=1;$i<=12;$i++):
-                    $count = (int)$visitor_month[$i];
-                    $h = ($count / $max) * 100;
-                ?>
-                  <div class="flex-1 flex flex-col items-center relative">
-                    <div class="text-xs text-slate-500 mb-2"><?php echo $count; ?></div>
-                    <div class="w-full bg-slate-100 rounded-t-md flex items-end justify-center" style="height: <?php echo max(6, $h); ?>%;">
-                      <div class="w-full rounded-t-md" style="background: linear-gradient(180deg, rgba(99,102,241,0.15), rgba(99,102,241,0.28)); height: 100%; border-top: 2px solid rgba(99,102,241,0.35);"></div>
-                    </div>
-                    <span class="text-xs mt-2 text-slate-600"><?php echo date('M', mktime(0,0,0,$i,1)); ?></span>
-                  </div>
-                <?php endfor; ?>
-              </div>
-            </div>
-            <div class="mt-4 text-sm text-slate-600">Total tahun ini: <strong><?php echo array_sum($visitor_month); ?></strong></div>
-          </div>
-
-          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <h4 class="text-sm font-semibold mb-4"><span class="inline-block bg-gradient-to-r from-amber-400 to-amber-600 text-white px-3 py-1 rounded-md">3 Halaman Paling Sering Dikunjungi</span></h4>
-            <?php if (!empty($top_pages)): ?>
-              <ol class="list-decimal pl-5 space-y-2 text-sm text-slate-700">
-                <?php foreach ($top_pages as $page => $cnt): ?>
-                  <li class="truncate"><span class="font-medium"><?php echo htmlspecialchars($page); ?></span> — <?php echo $cnt; ?> kunjungan</li>
-                <?php endforeach; ?>
-              </ol>
-            <?php else: ?>
-              <div class="text-sm text-slate-500">Belum ada data kunjungan</div>
-            <?php endif; ?>
-          </div>
-        </div>
+        <!-- Statistik pengunjung dihapus -->
 
         <!-- Statistik Cards (6 kolom per baris pada layar ekstra besar) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
@@ -551,12 +510,15 @@ include 'components/sidebar.php';
               ];
               foreach ($sectionOptions as $key => $label):
             ?>
-              <label class="flex items-center gap-3 rounded-2xl border border-slate-200 p-3 cursor-pointer hover:border-slate-300 transition-colors">
-                <input type="checkbox" name="section[<?php echo $key; ?>]" value="1" <?php echo !empty($homepageSections[$key]) ? 'checked' : ''; ?> class="w-5 h-5 text-brand-accent border-slate-300 rounded">
+              <label class="flex items-center justify-between rounded-2xl border border-slate-200 p-4 cursor-pointer hover:border-slate-300 transition-colors bg-slate-50/30">
                 <span class="text-sm font-medium text-slate-800"><?php echo $label; ?></span>
+                <div class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" name="section[<?php echo $key; ?>]" value="1" <?php echo !empty($homepageSections[$key]) ? 'checked' : ''; ?> class="sr-only peer">
+                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </div>
               </label>
             <?php endforeach; ?>
-              <div class="col-span-full flex justify-end mt-2">
+              <div class="col-span-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2">
                 <button type="submit" class="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-300/30 transition-colors hover:bg-emerald-700">Simpan Pengaturan</button>
               </div>
           </form>

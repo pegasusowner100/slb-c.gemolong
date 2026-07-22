@@ -1,38 +1,14 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
 require_login();
 
-$title = "Data Pendaftar PPDB — SMA Negeri 1 Nusantara";
+$title = "Data Pendaftar PPDB — SLB BC KARYA SEJAHTERA";
 $page_title = "Data PPDB";
 
-// Dummy data PPDB
-$ppdb_list = [
-    [
-        'no_reg' => 'PPDB-2025-001',
-        'nama_lengkap' => 'Budi Santoso',
-        'sekolah_asal' => 'SMP Negeri 1 Nusantara',
-        'status' => 'Menunggu'
-    ],
-    [
-        'no_reg' => 'PPDB-2025-002',
-        'nama_lengkap' => 'Siti Aminah',
-        'sekolah_asal' => 'SMP Negeri 2 Nusantara',
-        'status' => 'Diterima'
-    ],
-    [
-        'no_reg' => 'PPDB-2025-003',
-        'nama_lengkap' => 'Andi Pratama',
-        'sekolah_asal' => 'SMP Swasta Harapan',
-        'status' => 'Menunggu'
-    ],
-    [
-        'no_reg' => 'PPDB-2025-004',
-        'nama_lengkap' => 'Dewi Lestari',
-        'sekolah_asal' => 'SMP Negeri 3 Nusantara',
-        'status' => 'Ditolak'
-    ]
-];
+// Data PPDB akan diambil dari database
+$ppdb_list = [];
 
 include 'components/head.php';
 include 'components/sidebar.php';

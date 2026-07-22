@@ -11,122 +11,146 @@ if (!isset($hero) || empty($hero)) {
         }
     }
 }
-$mottoText = htmlspecialchars(trim($hero['motto'] ?? 'Mandiri berkarakter berdikari'));
+$mottoText = htmlspecialchars(trim($hero['motto'] ?? ''));
+// Pastikan data profil sekolah tersedia (beberapa halaman mungkin sudah memuat db.php)
+if (!isset($profilSekolah) || empty($profilSekolah)) {
+  if (!isset($supabaseConnected)) {
+    require_once __DIR__ . '/../includes/db.php';
+  }
+}
 ?>
   <!-- ========== FOOTER ========== -->
-  <footer class="bg-[#4c3900] pt-8 pb-8">
+  <footer class="bg-[#f97316] pt-8 pb-8">
     <div class="max-w-7xl mx-auto px-6">
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
         <div class="lg:border-r lg:border-white/10 lg:pr-8">
-          <?php $footerLogo = !empty($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] : BASE_URL . '/assets/images/JATENG JR.jpg'; ?>
-          <div class="flex items-center gap-3 mb-6"><img src="<?php echo htmlspecialchars($footerLogo); ?>" alt="Logo Sekolah" class="w-14 h-14 rounded-full object-cover" onerror="this.src='https://picsum.photos/seed/logo/100/100'"><span class="font-serif text-lg font-semibold text-white"><?php echo htmlspecialchars(SITE_NAME); ?></span></div>
-          <p class="text-white/50 text-sm font-light leading-relaxed mb-6"><?php echo $mottoText; ?></p>
+          <?php
+            $footerLogo = !empty($profilSekolah['logo_url']) ? $profilSekolah['logo_url'] : BASE_URL . '/assets/images/JATENG JR.jpg';
+            $footerSchoolName = mb_strtoupper(trim($profilSekolah['nama_sekolah'] ?? SITE_NAME), 'UTF-8');
+          ?>
+          <div class="flex items-center gap-3 mb-6"><a href="<?= BASE_URL ?>/admin/index.php" class="flex items-center gap-3"><img src="<?php echo htmlspecialchars($footerLogo); ?>" alt="Logo Sekolah" class="w-14 h-14 rounded-full object-cover" onerror="this.src='https://picsum.photos/seed/logo/100/100'"><span class="font-serif text-lg font-semibold text-white"><?php echo htmlspecialchars($footerSchoolName); ?></span></a></div>
+          <p class="text-white/90 text-sm font-light leading-relaxed mb-6"><?php echo $mottoText; ?></p>
           <div class="flex items-center gap-3 mb-8">
             <?php if (!empty($profilSekolah['instagram'])): ?>
-              <a href="<?php echo htmlspecialchars($profilSekolah['instagram']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors"><iconify-icon icon="lucide:instagram" class="text-xs"></iconify-icon></a>
+              <a href="<?php echo htmlspecialchars($profilSekolah['instagram']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/40 flex items-center justify-center text-white/90 hover:bg-white/20 hover:text-white transition-colors"><iconify-icon icon="lucide:instagram" class="text-xs"></iconify-icon></a>
             <?php endif; ?>
             <?php if (!empty($profilSekolah['facebook'])): ?>
-              <a href="<?php echo htmlspecialchars($profilSekolah['facebook']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors"><iconify-icon icon="lucide:facebook" class="text-xs"></iconify-icon></a>
+              <a href="<?php echo htmlspecialchars($profilSekolah['facebook']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/40 flex items-center justify-center text-white/90 hover:bg-white/20 hover:text-white transition-colors"><iconify-icon icon="lucide:facebook" class="text-xs"></iconify-icon></a>
             <?php endif; ?>
             <?php if (!empty($profilSekolah['youtube'])): ?>
-              <a href="<?php echo htmlspecialchars($profilSekolah['youtube']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors"><iconify-icon icon="lucide:youtube" class="text-xs"></iconify-icon></a>
+              <a href="<?php echo htmlspecialchars($profilSekolah['youtube']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/40 flex items-center justify-center text-white/90 hover:bg-white/20 hover:text-white transition-colors"><iconify-icon icon="lucide:youtube" class="text-xs"></iconify-icon></a>
             <?php endif; ?>
             <?php if (!empty($profilSekolah['tiktok'])): ?>
-              <a href="<?php echo htmlspecialchars($profilSekolah['tiktok']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:bg-white/10 hover:text-white transition-colors text-xs font-bold">T</a>
+              <a href="<?php echo htmlspecialchars($profilSekolah['tiktok']); ?>" target="_blank" class="w-9 h-9 rounded-full border border-white/40 flex items-center justify-center text-white/90 hover:bg-white/20 hover:text-white transition-colors text-xs font-bold">T</a>
             <?php endif; ?>
           </div>
           <?php
+            // Bangun URL peta dari beberapa sumber: maps_url (embed atau koordinat), latitude/longitude, atau alamat
             $footerMapUrl = '';
-            if (!empty($profilSekolah['maps_url'])) {
-              $mapsUrl = trim($profilSekolah['maps_url']);
+            $mapsUrl = trim($profilSekolah['maps_url'] ?? '');
+            if (!empty($mapsUrl)) {
               if (strpos($mapsUrl, 'maps/embed') !== false || strpos($mapsUrl, 'output=embed') !== false) {
                 $footerMapUrl = $mapsUrl;
               } elseif (preg_match('/@(-?\d+\.\d+),(-?\d+\.\d+)/', $mapsUrl, $coords)) {
                 $footerMapUrl = 'https://maps.google.com/maps?q=' . urlencode($coords[1] . ',' . $coords[2]) . '&output=embed';
               } else {
-                $address = !empty($profilSekolah['alamat']) ? $profilSekolah['alamat'] : 'SLB-C YPSLB Gemolong';
+                $address = !empty($profilSekolah['alamat']) ? $profilSekolah['alamat'] : 'SLB BC KARYA SEJAHTERA';
                 $footerMapUrl = 'https://maps.google.com/maps?q=' . urlencode($address) . '&output=embed';
               }
+            } elseif (!empty($profilSekolah['latitude']) && !empty($profilSekolah['longitude'])) {
+              $footerMapUrl = 'https://maps.google.com/maps?q=' . urlencode($profilSekolah['latitude'] . ',' . $profilSekolah['longitude']) . '&output=embed';
+            } else {
+              $address = !empty($profilSekolah['alamat']) ? $profilSekolah['alamat'] : 'SLB BC KARYA SEJAHTERA';
+              $footerMapUrl = 'https://maps.google.com/maps?q=' . urlencode($address) . '&output=embed';
             }
           ?>
-          <?php if (!empty($footerMapUrl)): ?>
+          <?php
+            // Jika latitude/longitude tersedia, tampilkan OpenStreetMap embed seperti di halaman Kontak
+            $lat = isset($profilSekolah['latitude']) ? trim((string)$profilSekolah['latitude']) : '';
+            $lon = isset($profilSekolah['longitude']) ? trim((string)$profilSekolah['longitude']) : '';
+            $osmDisplayed = false;
+            if ($lat !== '' && $lon !== '' && is_numeric($lat) && is_numeric($lon)) {
+              $latf = floatval($lat);
+              $lonf = floatval($lon);
+              $delta = 0.01; // area sekitar marker
+              $lon_min = $lonf - $delta; $lat_min = $latf - $delta; $lon_max = $lonf + $delta; $lat_max = $latf + $delta;
+              $bbox = rawurlencode($lon_min) . '%2C' . rawurlencode($lat_min) . '%2C' . rawurlencode($lon_max) . '%2C' . rawurlencode($lat_max);
+              $marker = rawurlencode($latf) . '%2C' . rawurlencode($lonf);
+              $osmSrc = "https://www.openstreetmap.org/export/embed.html?bbox={$bbox}&layer=mapnik&marker={$marker}";
+              ?>
+              <div class="rounded-3xl overflow-hidden border border-white/10 bg-black/5" style="min-height:150px; height:150px;">
+                <iframe src="<?php echo htmlspecialchars($osmSrc); ?>" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+              </div>
+              <?php
+              $osmDisplayed = true;
+            }
+
+            // Jika OSM tidak bisa ditampilkan, gunakan footerMapUrl (Google Maps/embed/address)
+            if (!$osmDisplayed && !empty($footerMapUrl)) {
+          ?>
             <div class="rounded-3xl overflow-hidden border border-white/10 bg-black/5" style="min-height:150px; height:150px;">
               <iframe src="<?php echo htmlspecialchars($footerMapUrl); ?>" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
-          <?php endif; ?>
+          <?php } ?>
         </div>
-        <div class="lg:border-r lg:border-white/10 lg:pr-8">
-          <h4 class="text-white/50 font-bold tracking-[0.2em] uppercase text-brand-label mb-6">Navigasi</h4>
+        <div class="lg:border-r lg:border-white/20 lg:pr-8">
+          <h4 class="text-white font-bold tracking-[0.2em] uppercase text-brand-label mb-6">Navigasi</h4>
           <div class="grid grid-cols-2 gap-4">
             <ul class="space-y-3">
-              <li><a href="<?= BASE_URL ?>/index.php#profil" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Profil</a></li>
-              <li><a href="<?= BASE_URL ?>/index.php#program" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Program</a></li>
-              <li><a href="<?= BASE_URL ?>/index.php#fasilitas" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Fasilitas</a></li>
+              <li><a href="<?= BASE_URL ?>/index.php#profil" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Profil</a></li>
+              <li><a href="<?= BASE_URL ?>/index.php#program" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Program</a></li>
+              <li><a href="<?= BASE_URL ?>/index.php#fasilitas" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Fasilitas</a></li>
             </ul>
             <ul class="space-y-3">
-              <li><a href="<?= BASE_URL ?>/index.php#prestasi" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Prestasi</a></li>
-              <li><a href="<?= BASE_URL ?>/pages/galeri.php" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Galeri</a></li>
-              <li><a href="<?= BASE_URL ?>/pages/berita.php" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Pengumuman</a></li>
+              <li><a href="<?= BASE_URL ?>/index.php#prestasi" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Prestasi</a></li>
+              <li><a href="<?= BASE_URL ?>/pages/galeri.php" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Galeri</a></li>
+              <li><a href="<?= BASE_URL ?>/pages/pengumuman.php" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Pengumuman</a></li>
             </ul>
           </div>
           <div class="grid grid-cols-2 gap-4 mt-4">
             <ul class="space-y-3">
-              <li><a href="<?= BASE_URL ?>/pages/download.php" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Download</a></li>
-              <li><a href="<?= BASE_URL ?>/pages/anggaran.php" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Anggaran & Belanja</a></li>
+              <li><a href="<?= BASE_URL ?>/pages/download.php" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Download</a></li>
+              <li><a href="<?= BASE_URL ?>/pages/anggaran.php" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Anggaran & Belanja</a></li>
             </ul>
             <ul class="space-y-3">
-              <li><a href="<?= BASE_URL ?>/pages/faq.php" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">FAQ</a></li>
-              <li><a href="<?= BASE_URL ?>/pages/kontak.php" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Kontak</a></li>
+              <li><a href="<?= BASE_URL ?>/pages/faq.php" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">FAQ</a></li>
+              <li><a href="<?= BASE_URL ?>/pages/kontak.php" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Kontak</a></li>
             </ul>
           </div>
         </div>
-        <div class="lg:border-r lg:border-white/10 lg:pr-8">
-          <h4 class="text-white/50 font-bold tracking-[0.2em] uppercase text-brand-label mb-6">Layanan</h4>
+        <div class="lg:border-r lg:border-white/20 lg:pr-8">
+          <h4 class="text-white font-bold tracking-[0.2em] uppercase text-brand-label mb-6">Layanan</h4>
           <ul class="space-y-3">
-            <li><a href="<?= BASE_URL ?>/pages/ppdb.php" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">PPDB Online</a></li>
-            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">E-Learning</a></li>
-            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Perpustakaan Digital</a></li>
-            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Portal Orang Tua</a></li>
-            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/50 hover:text-[#f8d468] transition-colors">Alumni Connect</a></li>
+            <li><a href="<?= BASE_URL ?>/pages/ppdb.php" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">PPDB Online</a></li>
+            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">E-Learning</a></li>
+            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Perpustakaan Digital</a></li>
+            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Portal Orang Tua</a></li>
+            <li><a href="<?= BASE_URL ?>/pages/layanan-online.php?service=surat" class="text-sm text-white/90 hover:text-[#fef3c7] transition-colors">Alumni Connect</a></li>
           </ul>
         </div>
         <div>
-          <h4 class="text-white/50 font-bold tracking-[0.2em] uppercase text-brand-label mb-6">Kontak</h4>
+          <h4 class="text-white font-bold tracking-[0.2em] uppercase text-brand-label mb-6">Kontak</h4>
           <ul class="space-y-3 mb-6">
-            <li class="flex items-start gap-2"><iconify-icon icon="lucide:map-pin" class="text-[#f8d468] text-sm mt-0.5"></iconify-icon><span class="text-sm text-white/50 font-light"><?php echo htmlspecialchars($profilSekolah['alamat']); ?></span></li>
-            <li class="flex items-start gap-2"><iconify-icon icon="lucide:phone" class="text-[#f8d468] text-sm mt-0.5"></iconify-icon><a href="tel:<?php echo preg_replace('/[^0-9]/', '', $profilSekolah['telepon']); ?>" class="text-sm text-white/50 font-light hover:text-[#f8d468] transition-colors"><?php echo htmlspecialchars($profilSekolah['telepon']); ?></a></li>
-            <li class="flex items-start gap-2"><iconify-icon icon="lucide:message-circle" class="text-[#f8d468] text-sm mt-0.5"></iconify-icon><a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $profilSekolah['telepon']); ?>" target="_blank" class="text-sm text-white/50 font-light hover:text-[#f8d468] transition-colors">WhatsApp <?php echo htmlspecialchars($profilSekolah['telepon']); ?></a></li>
-            <li class="flex items-start gap-2"><iconify-icon icon="lucide:mail" class="text-[#f8d468] text-sm mt-0.5"></iconify-icon><a href="mailto:<?php echo htmlspecialchars($profilSekolah['email']); ?>" class="text-sm text-white/50 font-light hover:text-[#f8d468] transition-colors"><?php echo htmlspecialchars($profilSekolah['email']); ?></a></li>
+            <li class="flex items-start gap-2"><iconify-icon icon="lucide:map-pin" class="text-[#fef3c7] text-sm mt-0.5"></iconify-icon><span class="text-sm text-white/90 font-light"><?php echo htmlspecialchars($profilSekolah['alamat']); ?></span></li>
+            <li class="flex items-start gap-2"><iconify-icon icon="lucide:phone" class="text-[#fef3c7] text-sm mt-0.5"></iconify-icon><a href="tel:<?php echo preg_replace('/[^0-9]/', '', $profilSekolah['telepon']); ?>" class="text-sm text-white/90 font-light hover:text-[#fef3c7] transition-colors"><?php echo htmlspecialchars($profilSekolah['telepon']); ?></a></li>
+            <li class="flex items-start gap-2"><iconify-icon icon="lucide:message-circle" class="text-[#fef3c7] text-sm mt-0.5"></iconify-icon><a href="https://wa.me/<?php echo preg_replace('/[^0-9]/', '', $profilSekolah['telepon']); ?>" target="_blank" class="text-sm text-white/90 font-light hover:text-[#fef3c7] transition-colors">WhatsApp <?php echo htmlspecialchars($profilSekolah['telepon']); ?></a></li>
+            <li class="flex items-start gap-2"><iconify-icon icon="lucide:mail" class="text-[#fef3c7] text-sm mt-0.5"></iconify-icon><a href="mailto:<?php echo htmlspecialchars($profilSekolah['email']); ?>" class="text-sm text-white/90 font-light hover:text-[#fef3c7] transition-colors"><?php echo htmlspecialchars($profilSekolah['email']); ?></a></li>
           </ul>
-          <div class="pt-6 border-t border-white/10">
-            <div class="flex items-start gap-3">
-              <button onclick="openLightbox(this)" class="cursor-pointer flex-shrink-0 hover:opacity-80 transition-opacity">
-                <img src="<?= BASE_URL ?>/assets/images/PEGASUS.jpeg" alt="Pegasus Developer" class="w-16 h-16 rounded-2xl object-contain">
-              </button>
-              <div>
-                <h4 class="text-white/50 font-bold text-white uppercase tracking-wide">Pegasus</h4>
-                <p class="text-[10px] text-white/50 font-light mb-2 whitespace-nowrap">Custom App & Web Development</p>
-                <a href="https://wa.me/6285868511006" target="_blank" class="text-xs text-white hover:text-[#f8d468] transition-colors flex items-center gap-1 font-semibold">
-                  <iconify-icon icon="lucide:phone" class="text-xs"></iconify-icon>
-                  085868511006
-                </a>
-              </div>
-            </div>
-          </div>
+          <!-- Developer Info Removed -->
         </div>
       </div>
-      <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        <p class="text-xs text-white/30 font-light">© 2026 <?php echo htmlspecialchars(SITE_NAME); ?>. Seluruh hak cipta dilindungi.</p>
+      <div class="border-t border-white/20 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <p class="text-xs text-white/70 font-light">© 2026 <?php echo htmlspecialchars(mb_strtoupper(trim($profilSekolah['nama_sekolah'] ?? SITE_NAME), 'UTF-8')); ?>. Seluruh hak cipta dilindungi.</p>
         <div class="flex items-center gap-6">
-          <a href="#" onclick="openLegalModal('privacy'); return false;" class="text-xs text-white/30 hover:text-[#f8d468] transition-colors">Kebijakan Privasi</a>
-          <a href="#" onclick="openLegalModal('terms'); return false;" class="text-xs text-white/30 hover:text-[#f8d468] transition-colors">Syarat & Ketentuan</a>
+          <a href="#" onclick="openLegalModal('privacy'); return false;" class="text-xs text-white/70 hover:text-[#fef3c7] transition-colors">Kebijakan Privasi</a>
+          <a href="#" onclick="openLegalModal('terms'); return false;" class="text-xs text-white/70 hover:text-[#fef3c7] transition-colors">Syarat & Ketentuan</a>
         </div>
       </div>
     </div>
   </footer>
 
   <!-- BACK TO TOP -->
-  <button id="backToTop" class="fixed bottom-8 right-8 w-12 h-12 bg-[#f8d468] hover:bg-[#d1b500] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 opacity-0 translate-y-4 z-50">
+  <button id="backToTop" class="fixed bottom-8 right-8 w-12 h-12 bg-[#f97316] hover:bg-[#ea580c] text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 opacity-0 translate-y-4 z-50">
     <iconify-icon icon="lucide:arrow-up" class="text-lg"></iconify-icon>
   </button>
 
@@ -143,7 +167,7 @@ $mottoText = htmlspecialchars(trim($hero['motto'] ?? 'Mandiri berkarakter berdik
         </button>
       </div>
       <div class="p-6 space-y-4 text-sm leading-relaxed text-slate-700">
-        <p>SLB-C YPSLB GEMOLONG berkomitmen menjaga privasi pengunjung website. Data pribadi hanya digunakan untuk tujuan layanan, pendaftaran PPDB, dan komunikasi resmi.</p>
+        <p>SLB BC KARYA SEJAHTERA berkomitmen menjaga privasi pengunjung website. Data pribadi hanya digunakan untuk tujuan layanan, pendaftaran PPDB, dan komunikasi resmi.</p>
         <p>Informasi yang dikumpulkan dapat mencakup nama, alamat email, nomor telepon, dan data pendaftaran lainnya. Data tidak akan dibagikan ke pihak ketiga tanpa persetujuan pengguna kecuali diwajibkan oleh hukum.</p>
         <p>Untuk detail lebih lengkap, silakan hubungi kami melalui halaman <a href="<?= BASE_URL ?>/pages/kontak.php" class="text-[#f8d468] hover:underline">Kontak</a>.</p>
       </div>
@@ -165,8 +189,8 @@ $mottoText = htmlspecialchars(trim($hero['motto'] ?? 'Mandiri berkarakter berdik
         </button>
       </div>
       <div class="p-6 space-y-4 text-sm leading-relaxed text-slate-700">
-        <p>Dengan menggunakan website dan layanan SLB-C YPSLB GEMOLONG, Anda menyetujui bahwa informasi yang diberikan harus akurat dan valid. Semua proses pendaftaran akan mengikuti ketentuan resmi sekolah.</p>
-        <p>SLB-C YPSLB GEMOLONG berhak menolak pendaftaran apabila data tidak lengkap atau tidak memenuhi syarat. Penggunaan website harus sesuai dengan hukum dan norma yang berlaku.</p>
+        <p>Dengan menggunakan website dan layanan SLB BC KARYA SEJAHTERA, Anda menyetujui bahwa informasi yang diberikan harus akurat dan valid. Semua proses pendaftaran akan mengikuti ketentuan resmi sekolah.</p>
+        <p>SLB BC KARYA SEJAHTERA berhak menolak pendaftaran apabila data tidak lengkap atau tidak memenuhi syarat. Penggunaan website harus sesuai dengan hukum dan norma yang berlaku.</p>
         <p>Lebih lanjut, silakan baca informasi resmi kami atau hubungi tim sekolah untuk klarifikasi.</p>
       </div>
       <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-slate-50">
@@ -255,7 +279,7 @@ $mottoText = htmlspecialchars(trim($hero['motto'] ?? 'Mandiri berkarakter berdik
 
     // ===== Testimoni =====
     const tData = [
-      {text:'"SMA Negeri 1 Nusantara bukan sekadar tempat belajar, tapi rumah kedua yang membentuk karakter dan masa depan saya."',name:'Aisyah Putri',role:'Alumni 2023 — Mahasiswa UI',img:'https://picsum.photos/seed/alm1/80/80.jpg'},
+      {text:'"SLB BC KARYA SEJAHTERA bukan sekadar tempat belajar, tapi rumah kedua yang membentuk karakter dan masa depan saya."',name:'Aisyah Putri',role:'Alumni 2023 — Mahasiswa UI',img:'https://picsum.photos/seed/alm1/80/80.jpg'},
       {text:'"Program olimpiade membawa saya sampai ke kompetisi internasional dan akhirnya mendapat beasiswa penuh di ITB."',name:'Rizky Pratama',role:'Alumni 2022 — Mahasiswa ITB',img:'https://picsum.photos/seed/alm2/80/80.jpg'},
       {text:'"Sebagai orang tua, saya sangat bersyukur anak saya bersekolah di sini. Komunikasi sekolah-orang tua sangat baik."',name:'Ibu Diana Sari',role:'Orang Tua Siswa Kelas XI',img:'https://picsum.photos/seed/par1/80/80.jpg'},
       {text:'"Fasilitas lengkap dan kegiatan ekstrakurikuler beragam membuat saya bisa mengembangkan minat di bidang robotika."',name:'Dimas Arya Putra',role:'Siswa Kelas XII MIPA 1',img:'https://picsum.photos/seed/std1/80/80.jpg'}

@@ -1,7 +1,37 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Download — " . SITE_NAME;
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/download');
+$title = "Download — SLB BC KARYA SEJAHTERA " . SITE_NAME;
+
+if (!function_exists('resolveAbsoluteUrl')) {
+    function resolveAbsoluteUrl($url) {
+        if (empty($url)) {
+            return '';
+        }
+
+        $url = trim($url);
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+
+        if (strpos($url, '//') === 0) {
+            return 'https:' . $url;
+        }
+
+        if (strpos($url, '/') === 0) {
+            $base = defined('BASE_URL') ? rtrim(BASE_URL, '/') : '';
+            return ($base === '' ? '' : $base) . $url;
+        }
+
+        if (defined('LOCAL_UPLOAD_BASE_URL_PUBLIC') && LOCAL_UPLOAD_BASE_URL_PUBLIC !== '') {
+            return rtrim(LOCAL_UPLOAD_BASE_URL_PUBLIC, '/') . '/' . ltrim($url, '/');
+        }
+
+        return $url;
+    }
+}
 
 // Get all published downloads
 $downloads = [];
@@ -37,6 +67,12 @@ include '../components/head.php';
   <section class="py-24">
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section space-y-8">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Download</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">File & Dokumen</h2>
+          </div>
+        </div>
         <!-- Intro Text -->
         <div class="fade-in-up delay-200">
           <p class="text-brand-muted text-sm leading-relaxed">
@@ -96,7 +132,7 @@ include '../components/head.php';
                         </span>
                       </td>
                       <td class="px-6 py-4">
-                        <a href="<?php echo htmlspecialchars($download['file_url']); ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-accent to-brand-accent/80 hover:from-brand-secondary hover:to-brand-secondary/80 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
+                        <a href="<?php echo htmlspecialchars(resolveAbsoluteUrl($download['file_url'])); ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-accent to-brand-accent/80 hover:from-brand-secondary hover:to-brand-secondary/80 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
                           <iconify-icon icon="lucide:download" class="text-sm"></iconify-icon>
                           Download
                         </a>

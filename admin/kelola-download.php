@@ -1,13 +1,64 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/supabase_storage.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Download — " . SITE_NAME;
+$title = "Kelola Download — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Kelola Download";
 $success = '';
 $error = '';
+
+function isFileUrlAccessible($url) {
+    if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+        return false;
+    }
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_NOBODY, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    return $httpCode >= 200 && $httpCode < 400;
+}
+
+function uploadPublicPdfFile($file, $folder = 'download') {
+    if (!isset($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        return [
+            'success' => false,
+            'url' => null,
+            'error' => 'File tidak tersedia atau gagal diupload.'
+        ];
+    }
+
+    if (function_exists('uploadToSupabaseStorage')) {
+        $supabaseResult = uploadToSupabaseStorage($file, $folder);
+        if ($supabaseResult['success']) {
+            return [
+                'success' => true,
+                'url' => $supabaseResult['url'],
+                'storage' => 'supabase'
+            ];
+        }
+        $lastError = 'Supabase Storage: ' . ($supabaseResult['error'] ?? 'Upload gagal.');
+    } else {
+        $lastError = 'Supabase Storage tidak tersedia.';
+    }
+
+    return [
+        'success' => false,
+        'url' => null,
+        'error' => $lastError
+    ];
+}
 
 // Handle add download
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_download'])) {
@@ -24,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_download'])) {
         } elseif (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             $error = 'File harus dipilih!';
         } else {
-            $uploadResult = uploadToCloudinary($_FILES['file'], 'download');
+            $uploadResult = uploadPublicPdfFile($_FILES['file'], 'download');
             if ($uploadResult['success']) {
                 $data = [
                     'judul' => $judul,
@@ -43,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_download'])) {
                     $error = 'Gagal menambahkan download: ' . ($result['error'] ?? 'Unknown error');
                     error_log('Supabase Insert Error: ' . json_encode($result));
                 }
-            } elseif (!isset($uploadResult['skip_upload'])) {
+            } else {
                 $error = 'Gagal upload file: ' . ($uploadResult['error'] ?? 'Unknown error');
             }
         }
@@ -73,10 +124,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_download'])) {
 
             // Handle file upload if provided
             if (isset($_FILES['edit_file']) && $_FILES['edit_file']['error'] === UPLOAD_ERR_OK) {
-                $uploadResult = uploadToCloudinary($_FILES['edit_file'], 'download');
+                $uploadResult = uploadPublicPdfFile($_FILES['edit_file'], 'download');
                 if ($uploadResult['success']) {
                     $currentFileUrl = $uploadResult['url'];
-                } elseif (!isset($uploadResult['skip_upload'])) {
+                } else {
                     $error = 'Gagal upload file: ' . ($uploadResult['error'] ?? 'Unknown error');
                 }
             }
@@ -345,6 +396,7 @@ include 'components/sidebar.php';
             <label class="block text-xs font-bold text-[#1F2D26] mb-2 uppercase tracking-wide">Upload File Baru (Opsional)</label>
             <input type="file" name="edit_file" accept=".pdf,.docx,.xlsx,.pptx,.zip,.doc,.xls,.ppt" class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3E6B4E] focus:border-transparent transition-all text-sm">
             <p class="text-xs text-slate-600 mt-2">Biarkan kosong jika tidak ingin mengganti file</p>
+            <div id="edit_download_current_file" class="text-sm text-slate-600 mt-2"></div>
           </div>
 
           <!-- Buttons -->
@@ -370,6 +422,15 @@ include 'components/sidebar.php';
       document.getElementById('edit_deskripsi').value = download.deskripsi || '';
       document.getElementById('edit_kategori').value = download.kategori || 'Umum';
       document.getElementById('edit_status').value = download.status || 'published';
+      const currentFile = document.getElementById('edit_download_current_file');
+      if (download.file_url) {
+        const resolvedFileUrl = download.file_url;
+        let fileName = decodeURIComponent(resolvedFileUrl.split('/').pop());
+        fileName = fileName.replace(/^[a-f0-9]+(\.[a-f0-9]+)?_/, '');
+        currentFile.innerHTML = 'File saat ini: <a href="' + resolvedFileUrl + '" target="_blank" class="text-[#3E6B4E] font-semibold hover:underline">' + fileName + '</a>';
+      } else {
+        currentFile.innerHTML = 'Belum ada file yang diunggah.';
+      }
       document.getElementById('modalEditDownload').classList.remove('hidden');
     }
 

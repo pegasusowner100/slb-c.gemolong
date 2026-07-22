@@ -1,16 +1,22 @@
 <?php
+define('ADMIN_PAGE', true);
 require_once '../includes/session.php';
 require_once '../includes/db.php';
-require_once '../includes/cloudinary.php';
+require_once '../includes/cloudinary-on.php';
 require_login();
 
-$title = "Kelola Siswa — " . SITE_NAME;
+$title = "Kelola Siswa — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 $page_title = "Kelola Siswa";
 $success = '';
 $error = '';
 
-// Handle search query
+// Handle search and filter queries
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
+$filter_jenis_kelamin = isset($_GET['jenis_kelamin']) ? trim($_GET['jenis_kelamin']) : '';
+$filter_usia_min = isset($_GET['usia_min']) ? intval($_GET['usia_min']) : '';
+$filter_usia_max = isset($_GET['usia_max']) ? intval($_GET['usia_max']) : '';
+$filter_jenjang = isset($_GET['jenjang']) ? trim($_GET['jenjang']) : '';
+$filter_kelas = isset($_GET['kelas']) ? trim($_GET['kelas']) : '';
 
 // Handle add siswa
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_siswa'])) {
@@ -21,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_siswa'])) {
         $nama = trim($_POST['nama']);
         $jenis_kelamin = $_POST['jenis_kelamin'];
         $usia = intval($_POST['usia']);
+        $jenjang = trim($_POST['jenjang']);
+        $kelas = trim($_POST['kelas']);
         $nama_ortu = trim($_POST['nama_ortu']);
         $telpon_ortu = trim($_POST['telpon_ortu']);
         $pekerjaan_ortu = $_POST['pekerjaan_ortu'];
@@ -43,6 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['tambah_siswa'])) {
             'nama' => $nama,
             'jenis_kelamin' => $jenis_kelamin,
             'usia' => $usia,
+            'jenjang' => $jenjang,
+            'kelas' => $kelas,
             'nama_ortu' => $nama_ortu,
             'telpon_ortu' => $telpon_ortu,
             'pekerjaan_ortu' => $pekerjaan_ortu,
@@ -71,6 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_siswa'])) {
         $nama = trim($_POST['edit_nama']);
         $jenis_kelamin = $_POST['edit_jenis_kelamin'];
         $usia = intval($_POST['edit_usia']);
+        $jenjang = trim($_POST['edit_jenjang']);
+        $kelas = trim($_POST['edit_kelas']);
         $nama_ortu = trim($_POST['edit_nama_ortu']);
         $telpon_ortu = trim($_POST['edit_telpon_ortu']);
         $pekerjaan_ortu = $_POST['edit_pekerjaan_ortu'];
@@ -99,6 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_siswa'])) {
             'nama' => $nama,
             'jenis_kelamin' => $jenis_kelamin,
             'usia' => $usia,
+            'jenjang' => $jenjang,
+            'kelas' => $kelas,
             'nama_ortu' => $nama_ortu,
             'telpon_ortu' => $telpon_ortu,
             'pekerjaan_ortu' => $pekerjaan_ortu,
@@ -131,21 +145,168 @@ if (isset($_GET['delete']) && !empty($_GET['delete'])) {
     }
 }
 
-// Get all siswa with search
+// Get ALL siswa (for live filtering)
 $all_siswa = [];
 if ($supabaseConnected) {
-    $filters = ['order' => 'no_induk.asc'];
-    if (!empty($search_query)) {
-        $filters['or'] = "(no_induk.ilike.%$search_query%,nama.ilike.%$search_query%,nama_ortu.ilike.%$search_query%,alamat_ortu.ilike.%$search_query%,telpon_ortu.ilike.%$search_query%)";
-    }
-    $result = supabaseSelect('siswa', $filters);
-    if ($result['success']) {
-        $all_siswa = $result['data'];
-    }
+  $result = supabaseSelect('siswa', ['order' => 'no_induk.asc']);
+  if ($result['success']) {
+    $all_siswa = $result['data'];
+  }
+}
+
+// Handle Excel Export
+if (isset($_GET['export']) && $_GET['export'] === 'excel') {
+  // Filter the data for export
+  $filtered_siswa = $all_siswa;
+  
+  // Search filter
+  if (!empty($search_query)) {
+    $search_lower = strtolower(trim($search_query));
+    $keywords = array_filter(explode(' ', $search_lower));
+    $filtered_siswa = array_filter($filtered_siswa, function($siswa) use ($search_lower, $keywords) {
+      $jk = $siswa['jenis_kelamin'] ?? '';
+      $jk_short = ($jk === 'Laki-laki') ? 'L' : (($jk === 'Perempuan') ? 'P' : '');
+      $usia = strval($siswa['usia'] ?? '');
+      $kelas = strval($siswa['kelas'] ?? '');
+      
+      $rowText = strtolower(implode(' ', [
+        $siswa['no_induk'] ?? '',
+        $siswa['nama'] ?? '',
+        $jk,
+        $jk_short,
+        $usia,
+        $usia ? $usia . ' tahun' : '',
+        $siswa['jenjang'] ?? '',
+        $kelas,
+        $kelas ? 'kelas ' . $kelas : '',
+        $siswa['nama_ortu'] ?? '',
+        $siswa['alamat_ortu'] ?? '',
+        $siswa['telpon_ortu'] ?? '',
+        $siswa['pekerjaan_ortu'] ?? '',
+        $siswa['status'] ?? ''
+      ]));
+
+      // Direct match of the exact typed string
+      if (str_contains($rowText, $search_lower)) {
+        return true;
+      }
+
+      // Fallback: match all individual keywords
+      foreach ($keywords as $kw) {
+        if (!str_contains($rowText, $kw)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+  
+  // Jenis Kelamin filter
+  if (!empty($filter_jenis_kelamin)) {
+    $filtered_siswa = array_filter($filtered_siswa, function($siswa) use ($filter_jenis_kelamin) {
+      return $siswa['jenis_kelamin'] === $filter_jenis_kelamin;
+    });
+  }
+  
+  // Usia range filter
+  if ($filter_usia_min !== '') {
+    $filtered_siswa = array_filter($filtered_siswa, function($siswa) use ($filter_usia_min) {
+      return $siswa['usia'] >= intval($filter_usia_min);
+    });
+  }
+  if ($filter_usia_max !== '') {
+    $filtered_siswa = array_filter($filtered_siswa, function($siswa) use ($filter_usia_max) {
+      return $siswa['usia'] <= intval($filter_usia_max);
+    });
+  }
+  
+  // Jenjang filter
+  if (!empty($filter_jenjang)) {
+    $filtered_siswa = array_filter($filtered_siswa, function($siswa) use ($filter_jenjang) {
+      return $siswa['jenjang'] === $filter_jenjang;
+    });
+  }
+  
+  // Kelas filter
+  if (!empty($filter_kelas)) {
+    $filtered_siswa = array_filter($filtered_siswa, function($siswa) use ($filter_kelas) {
+      return $siswa['kelas'] === $filter_kelas;
+    });
+  }
+
+  // Set headers for download
+  header('Content-Type: text/csv; charset=utf-8');
+  header('Content-Disposition: attachment; filename="data_siswa_' . date('Y-m-d_H-i-s') . '.csv"');
+  
+  // Open output stream
+  $output = fopen('php://output', 'w');
+  
+  // Add UTF-8 BOM to fix Excel character encoding
+  fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+  
+  // Write CSV header row
+  fputcsv($output, [
+    'No Induk',
+    'Nama Lengkap',
+    'Jenis Kelamin',
+    'Usia',
+    'Jenjang',
+    'Kelas',
+    'Nama Orang Tua',
+    'Alamat Orang Tua',
+    'Pekerjaan Orang Tua',
+    'Telepon Orang Tua',
+    'Status',
+    'Tanggal Dibuat',
+    'Tanggal Diperbarui'
+  ]);
+  
+  // Write data rows
+  foreach ($filtered_siswa as $index => $siswa) {
+    fputcsv($output, [
+      $siswa['no_induk'] ?? '',
+      $siswa['nama'] ?? '',
+      $siswa['jenis_kelamin'] ?? '',
+      $siswa['usia'] ?? '',
+      $siswa['jenjang'] ?? '',
+      $siswa['kelas'] ?? '',
+      $siswa['nama_ortu'] ?? '',
+      $siswa['alamat_ortu'] ?? '',
+      $siswa['pekerjaan_ortu'] ?? '',
+      $siswa['telpon_ortu'] ?? '',
+      $siswa['status'] ?? '',
+      $siswa['created_at'] ?? '',
+      $siswa['updated_at'] ?? ''
+    ]);
+  }
+  
+  // Close output stream and exit
+  fclose($output);
+  exit;
 }
 
 include 'components/head.php';
 include 'components/sidebar.php';
+
+// Prepare data for JavaScript
+$jsSiswaData = [];
+foreach ($all_siswa as $siswa) {
+  $jsSiswaData[] = [
+    'id' => $siswa['id'],
+    'no_induk' => $siswa['no_induk'],
+    'nama' => $siswa['nama'],
+    'jenis_kelamin' => $siswa['jenis_kelamin'],
+    'usia' => $siswa['usia'],
+    'jenjang' => $siswa['jenjang'],
+    'kelas' => $siswa['kelas'],
+    'nama_ortu' => $siswa['nama_ortu'],
+    'telpon_ortu' => $siswa['telpon_ortu'],
+    'pekerjaan_ortu' => $siswa['pekerjaan_ortu'],
+    'alamat_ortu' => $siswa['alamat_ortu'],
+    'foto' => $siswa['foto'] ?? 'https://picsum.photos/seed/default-siswa/300/400.jpg',
+    'status' => $siswa['status']
+  ];
+}
 ?>
 
   <!-- Main Content -->
@@ -178,15 +339,6 @@ include 'components/sidebar.php';
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 class="text-2xl font-semibold text-[#1F2D26]">Daftar Siswa</h2>
             <div class="flex items-center gap-3">
-              <!-- View Toggle -->
-              <div class="flex items-center bg-white rounded-lg border border-[#E8E4D9] p-1">
-                <button id="gridViewBtn" class="px-4 py-2 rounded-md bg-[#3E6B4E] text-white text-xs font-bold transition-colors">
-                  <iconify-icon icon="lucide:grid-3x3" class="inline mr-1"></iconify-icon> Grid
-                </button>
-                <button id="tableViewBtn" class="px-4 py-2 rounded-md text-[#5F6F65] hover:bg-[#F9F8F4] text-xs font-bold transition-colors">
-                  <iconify-icon icon="lucide:table" class="inline mr-1"></iconify-icon> Tabel
-                </button>
-              </div>
               <button onclick="document.getElementById('modalSiswa').classList.remove('hidden')" <?php echo !$supabaseConnected ? 'disabled' : ''; ?> class="bg-[#3E6B4E] text-white text-xs font-bold px-6 py-3 rounded-lg hover:bg-[#2F5B41] transition-colors uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
                 <iconify-icon icon="lucide:plus"></iconify-icon>
                 Tambah Siswa
@@ -194,32 +346,66 @@ include 'components/sidebar.php';
             </div>
           </div>
 
-          <!-- Search Form -->
-          <div class="bg-white p-4 rounded-xl border border-[#E8E4D9] shadow-sm">
-            <div class="flex flex-col md:flex-row gap-4">
-              <div class="flex-1 relative">
+          <!-- Search & Filter Form -->
+          <form method="get" action="kelola-siswa.php">
+            <div class="bg-white p-4 rounded-xl border border-[#E8E4D9] shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-4">
+              <div class="relative md:col-span-2">
                 <iconify-icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#9FB5A5]"></iconify-icon>
-                <input id="searchInput" type="text" value="<?php echo htmlspecialchars($search_query); ?>" placeholder="Cari berdasarkan nama, no induk, nama ortu, alamat, atau telepon..." oninput="filterAdminTable(this)" data-filter-selector="#tableView tbody tr, #gridView .bg-white.rounded-xl" class="w-full pl-10 pr-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm">
+                <input id="searchInput" type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" placeholder="Cari..." class="w-full pl-10 pr-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm">
               </div>
-              <?php if (!empty($search_query)): ?>
-                <div class="flex items-center gap-3">
-                  <a href="kelola-siswa.php" class="bg-[#5F6F65] text-white text-xs font-bold px-6 py-3 rounded-lg hover:bg-[#4a5a51] transition-colors uppercase tracking-widest flex items-center gap-2">
-                    <iconify-icon icon="lucide:x"></iconify-icon>
-                    Reset
-                  </a>
+              
+              <div>
+                <select name="jenis_kelamin" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm">
+                  <option value="">Semua JK</option>
+                  <option value="Laki-laki" <?php echo $filter_jenis_kelamin === 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
+                  <option value="Perempuan" <?php echo $filter_jenis_kelamin === 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
+                </select>
+              </div>
+              
+              <div class="flex gap-2 items-center">
+                <div class="flex-1">
+                  <input type="number" name="usia_min" value="<?php echo htmlspecialchars($filter_usia_min); ?>" placeholder="Usia min" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm">
                 </div>
-              <?php endif; ?>
+                <span class="text-[#9FB5A5] text-sm font-bold">s/d</span>
+                <div class="flex-1">
+                  <input type="number" name="usia_max" value="<?php echo htmlspecialchars($filter_usia_max); ?>" placeholder="Usia max" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm">
+                </div>
+              </div>
+              
+              <div>
+                <select name="jenjang" id="filterJenjang" onchange="updateFilterKelas()" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm">
+                  <option value="">Semua Jenjang</option>
+                  <option value="SDLB" <?php echo $filter_jenjang === 'SDLB' ? 'selected' : ''; ?>>SDLB</option>
+                  <option value="SMPLB" <?php echo $filter_jenjang === 'SMPLB' ? 'selected' : ''; ?>>SMPLB</option>
+                  <option value="SMALB" <?php echo $filter_jenjang === 'SMALB' ? 'selected' : ''; ?>>SMALB</option>
+                </select>
+              </div>
+              
+              <div>
+                <select name="kelas" id="filterKelas" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm">
+                  <option value="">Semua Kelas</option>
+                </select>
+              </div>
+              
+              <div class="flex gap-2 md:col-span-2">
+                <button type="submit" class="flex-1 bg-[#3E6B4E] text-white text-xs font-bold px-4 py-3 rounded-lg hover:bg-[#2F5B41] transition-colors uppercase tracking-widest flex items-center justify-center gap-2">
+                  <iconify-icon icon="lucide:filter"></iconify-icon>
+                  Filter
+                </button>
+                <a href="kelola-siswa.php" class="flex-1 bg-[#5F6F65] text-white text-xs font-bold px-4 py-3 rounded-lg hover:bg-[#4a5a51] transition-colors uppercase tracking-widest flex items-center justify-center gap-2">
+                  <iconify-icon icon="lucide:refresh-cw"></iconify-icon>
+                  Reset
+                </a>
+                <button type="submit" name="export" value="excel" class="flex-1 bg-orange-500 text-white text-xs font-bold px-4 py-3 rounded-lg hover:bg-orange-600 transition-colors uppercase tracking-widest flex items-center justify-center gap-2">
+                  <iconify-icon icon="lucide:file-spreadsheet"></iconify-icon>
+                  Export Excel
+                </button>
+              </div>
             </div>
           </div>
-
-          <!-- Search Results Info -->
-          <?php if (!empty($search_query)): ?>
-            <div class="p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg flex items-center gap-2">
-              <iconify-icon icon="lucide:info"></iconify-icon>
-              Menemukan <?php echo count($all_siswa); ?> hasil pencarian untuk "<?php echo htmlspecialchars($search_query); ?>"
-            </div>
-          <?php endif; ?>
-        </div>
+          </form>
+                  </div>
 
         <!-- Siswa List -->
         <?php if (empty($all_siswa)): ?>
@@ -228,97 +414,79 @@ include 'components/sidebar.php';
             <p class="text-[#5F6F65]">Belum ada data siswa.</p>
           </div>
         <?php else: ?>
-          <!-- Grid View (Default) -->
-          <div id="gridView" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <?php foreach ($all_siswa as $siswa): ?>
-              <div class="bg-white rounded-xl border border-[#E8E4D9] shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 <?php echo $siswa['status'] == 'Tidak Aktif' ? 'opacity-60' : ''; ?>">
-                <div class="p-6 text-center">
-                  <img src="<?php echo htmlspecialchars($siswa['foto'] ?? 'https://picsum.photos/seed/default-siswa/300/400.jpg'); ?>" alt="<?php echo htmlspecialchars($siswa['nama']); ?>" class="w-24 h-24 rounded-full object-cover border-4 border-[#3E6B4E]/20 mx-auto mb-4 shadow-md">
-                  <h3 class="font-serif text-lg font-semibold text-[#1F2D26] mb-1 line-clamp-1"><?php echo htmlspecialchars($siswa['nama']); ?></h3>
-                  <p class="text-sm text-[#9FB5A5] mb-3">No Induk: <?php echo htmlspecialchars($siswa['no_induk']); ?></p>
-                  <div class="flex items-center justify-center gap-2 mb-2">
-                    <span class="px-2 py-1 rounded-full text-xs font-bold <?php echo $siswa['jenis_kelamin'] == 'Laki-laki' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'; ?>">
-                      <?php echo htmlspecialchars($siswa['jenis_kelamin']); ?>
-                    </span>
-                    <span class="px-2 py-1 rounded-full text-xs font-bold <?php echo $siswa['status'] == 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
-                      <?php echo htmlspecialchars($siswa['status']); ?>
-                    </span>
-                  </div>
-                  <p class="text-xs text-[#5F6F65] mb-3">Ortu: <?php echo htmlspecialchars($siswa['nama_ortu'] ?? '-'); ?></p>
-                  <p class="text-xs text-[#5F6F65] mb-4">Usia: <?php echo htmlspecialchars($siswa['usia']); ?> tahun</p>
-                  <div class="flex items-center justify-center gap-2 pt-4 border-t border-[#E8E4D9]">
-                    <button onclick="openEditSiswaModal('<?php echo htmlspecialchars($siswa['id']); ?>', '<?php echo htmlspecialchars($siswa['no_induk']); ?>', '<?php echo htmlspecialchars($siswa['nama']); ?>', '<?php echo htmlspecialchars($siswa['jenis_kelamin']); ?>', '<?php echo htmlspecialchars($siswa['usia']); ?>', '<?php echo addslashes(htmlspecialchars($siswa['nama_ortu'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($siswa['alamat_ortu'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($siswa['pekerjaan_ortu'] ?? '')); ?>', '<?php echo htmlspecialchars($siswa['telpon_ortu'] ?? ''); ?>', '<?php echo htmlspecialchars($siswa['foto'] ?? 'https://picsum.photos/seed/default-siswa/300/400.jpg'); ?>', '<?php echo htmlspecialchars($siswa['status'] ?? 'Aktif'); ?>')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                      <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
-                    </button>
-                    <a href="?delete=<?php echo $siswa['id']; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?>" onclick="return confirm('Yakin ingin menghapus siswa ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      <iconify-icon icon="lucide:trash-2" class="w-5 h-5"></iconify-icon>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            <?php endforeach; ?>
-          </div>
-
           <!-- Table View -->
-          <div id="tableView" class="hidden">
-            <div class="bg-white rounded-xl border border-[#E8E4D9] shadow-sm overflow-hidden">
-              <div class="overflow-x-auto">
-                <table class="w-full">
-                  <thead class="bg-gradient-to-r from-[#3E6B4E] to-[#2F5B41]">
-                    <tr>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">No</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Foto</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">No Induk</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Nama Lengkap</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">JK</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Usia</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Nama Ortu</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Telpon Ortu</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Pekerjaan Ortu</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Alamat Ortu</th>
-                      <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Status</th>
-                      <th class="text-center px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Aksi</th>
+          <div class="bg-white rounded-xl border border-[#E8E4D9] shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gradient-to-r from-[#3E6B4E] to-[#2F5B41]">
+                  <tr>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">No</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Foto</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">No Induk</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Nama Lengkap</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">JK</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Usia</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Nama Ortu</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Telpon Ortu</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Pekerjaan Ortu</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Alamat Ortu</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Jenjang</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Kelas</th>
+                    <th class="text-left px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Status</th>
+                    <th class="text-center px-4 py-4 text-xs font-bold text-white uppercase tracking-wider">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[#E8E4D9]">
+                  <?php $no_urut = 1; foreach ($all_siswa as $siswa): ?>
+                    <tr class="hover:bg-[#F9F8F4] transition-all duration-200 siswa-item <?php echo $siswa['status'] == 'Tidak Aktif' ? 'opacity-60' : ''; ?>" 
+                        data-no-induk="<?php echo htmlspecialchars($siswa['no_induk']); ?>" 
+                        data-nama="<?php echo htmlspecialchars($siswa['nama']); ?>" 
+                        data-jenis-kelamin="<?php echo htmlspecialchars($siswa['jenis_kelamin']); ?>" 
+                        data-usia="<?php echo htmlspecialchars($siswa['usia']); ?>" 
+                        data-jenjang="<?php echo htmlspecialchars($siswa['jenjang']); ?>" 
+                        data-kelas="<?php echo htmlspecialchars($siswa['kelas']); ?>" 
+                        data-nama-ortu="<?php echo htmlspecialchars($siswa['nama_ortu'] ?? ''); ?>" 
+                        data-alamat-ortu="<?php echo htmlspecialchars($siswa['alamat_ortu'] ?? ''); ?>" 
+                        data-telpon-ortu="<?php echo htmlspecialchars($siswa['telpon_ortu'] ?? ''); ?>"
+                        data-pekerjaan-ortu="<?php echo htmlspecialchars($siswa['pekerjaan_ortu'] ?? ''); ?>"
+                        data-status="<?php echo htmlspecialchars($siswa['status'] ?? ''); ?>">
+                      <td class="px-4 py-4 text-sm text-[#5F6F65] font-medium"><?php echo $no_urut++; ?></td>
+                      <td class="px-4 py-4">
+                        <img src="<?php echo htmlspecialchars($siswa['foto'] ?? 'https://picsum.photos/seed/default-siswa/300/400.jpg'); ?>" alt="<?php echo htmlspecialchars($siswa['nama']); ?>" class="w-12 h-12 rounded-full object-cover border-2 border-[#3E6B4E]/20 shadow-md">
+                      </td>
+                      <td class="px-4 py-4 text-sm text-[#1F2D26] font-semibold"><?php echo htmlspecialchars($siswa['no_induk']); ?></td>
+                      <td class="px-4 py-4 text-sm text-[#1F2D26] font-medium"><?php echo htmlspecialchars($siswa['nama']); ?></td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65]">
+                        <span class="px-2 py-1 rounded-full text-xs font-bold <?php echo $siswa['jenis_kelamin'] == 'Laki-laki' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'; ?>">
+                          <?php echo htmlspecialchars(substr($siswa['jenis_kelamin'], 0, 1)); ?>
+                        </span>
+                      </td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['usia']); ?> tahun</td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['nama_ortu'] ?? '-'); ?></td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['telpon_ortu'] ?? '-'); ?></td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['pekerjaan_ortu'] ?? '-'); ?></td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65] max-w-xs truncate"><?php echo htmlspecialchars($siswa['alamat_ortu'] ?? '-'); ?></td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['jenjang'] ?? '-'); ?></td>
+                      <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['kelas'] ?? '-'); ?></td>
+                      <td class="px-4 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $siswa['status'] == 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
+                          <?php echo htmlspecialchars($siswa['status']); ?>
+                        </span>
+                      </td>
+                      <td class="px-4 py-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                          <button onclick='openEditSiswaModal(<?php echo json_encode($siswa['id']); ?>, <?php echo json_encode($siswa['no_induk']); ?>, <?php echo json_encode($siswa['nama']); ?>, <?php echo json_encode($siswa['jenis_kelamin']); ?>, <?php echo json_encode($siswa['usia']); ?>, <?php echo json_encode($siswa['nama_ortu'] ?? ''); ?>, <?php echo json_encode($siswa['alamat_ortu'] ?? ''); ?>, <?php echo json_encode($siswa['pekerjaan_ortu'] ?? ''); ?>, <?php echo json_encode($siswa['telpon_ortu'] ?? ''); ?>, <?php echo json_encode($siswa['foto'] ?? 'https://picsum.photos/seed/default-siswa/300/400.jpg'); ?>, <?php echo json_encode($siswa['status'] ?? 'Aktif'); ?>, <?php echo json_encode($siswa['jenjang'] ?? ''); ?>, <?php echo json_encode($siswa['kelas'] ?? ''); ?>)' class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                            <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
+                          </button>
+                          <a href="?delete=<?php echo $siswa['id']; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?>" onclick="return confirm('Yakin ingin menghapus siswa ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <iconify-icon icon="lucide:trash-2" class="w-5 h-5"></iconify-icon>
+                          </a>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody class="divide-y divide-[#E8E4D9]">
-                    <?php $no_urut = 1; foreach ($all_siswa as $siswa): ?>
-                      <tr class="hover:bg-[#F9F8F4] transition-all duration-200 <?php echo $siswa['status'] == 'Tidak Aktif' ? 'opacity-60' : ''; ?>">
-                        <td class="px-4 py-4 text-sm text-[#5F6F65] font-medium"><?php echo $no_urut++; ?></td>
-                        <td class="px-4 py-4">
-                          <img src="<?php echo htmlspecialchars($siswa['foto'] ?? 'https://picsum.photos/seed/default-siswa/300/400.jpg'); ?>" alt="<?php echo htmlspecialchars($siswa['nama']); ?>" class="w-12 h-12 rounded-full object-cover border-2 border-[#3E6B4E]/20 shadow-md">
-                        </td>
-                        <td class="px-4 py-4 text-sm text-[#1F2D26] font-semibold"><?php echo htmlspecialchars($siswa['no_induk']); ?></td>
-                        <td class="px-4 py-4 text-sm text-[#1F2D26] font-medium"><?php echo htmlspecialchars($siswa['nama']); ?></td>
-                        <td class="px-4 py-4 text-sm text-[#5F6F65]">
-                          <span class="px-2 py-1 rounded-full text-xs font-bold <?php echo $siswa['jenis_kelamin'] == 'Laki-laki' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'; ?>">
-                            <?php echo htmlspecialchars(substr($siswa['jenis_kelamin'], 0, 1)); ?>
-                          </span>
-                        </td>
-                        <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['usia']); ?> tahun</td>
-                        <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['nama_ortu'] ?? '-'); ?></td>
-                        <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['telpon_ortu'] ?? '-'); ?></td>
-                        <td class="px-4 py-4 text-sm text-[#5F6F65]"><?php echo htmlspecialchars($siswa['pekerjaan_ortu'] ?? '-'); ?></td>
-                        <td class="px-4 py-4 text-sm text-[#5F6F65] max-w-xs truncate"><?php echo htmlspecialchars($siswa['alamat_ortu'] ?? '-'); ?></td>
-                        <td class="px-4 py-4">
-                          <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $siswa['status'] == 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
-                            <?php echo htmlspecialchars($siswa['status']); ?>
-                          </span>
-                        </td>
-                        <td class="px-4 py-4 text-center">
-                          <div class="flex items-center justify-center gap-2">
-                            <button onclick="openEditSiswaModal('<?php echo htmlspecialchars($siswa['id']); ?>', '<?php echo htmlspecialchars($siswa['no_induk']); ?>', '<?php echo htmlspecialchars($siswa['nama']); ?>', '<?php echo htmlspecialchars($siswa['jenis_kelamin']); ?>', '<?php echo htmlspecialchars($siswa['usia']); ?>', '<?php echo addslashes(htmlspecialchars($siswa['nama_ortu'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($siswa['alamat_ortu'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($siswa['pekerjaan_ortu'] ?? '')); ?>', '<?php echo htmlspecialchars($siswa['telpon_ortu'] ?? ''); ?>', '<?php echo htmlspecialchars($siswa['foto'] ?? 'https://picsum.photos/seed/default-siswa/300/400.jpg'); ?>', '<?php echo htmlspecialchars($siswa['status'] ?? 'Aktif'); ?>')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                              <iconify-icon icon="lucide:edit" class="w-5 h-5"></iconify-icon>
-                            </button>
-                            <a href="?delete=<?php echo $siswa['id']; ?><?php echo !empty($search_query) ? '&search=' . urlencode($search_query) : ''; ?>" onclick="return confirm('Yakin ingin menghapus siswa ini?')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                              <iconify-icon icon="lucide:trash-2" class="w-5 h-5"></iconify-icon>
-                            </a>
-                          </div>
-                        </td>
-                      </tr>
-                    <?php endforeach; ?>
-                  </tbody>
-                </table>
-              </div>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
             </div>
           </div>
         <?php endif; ?>
@@ -330,14 +498,14 @@ include 'components/sidebar.php';
   <div id="modalSiswa" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('modalSiswa').classList.add('hidden')"></div>
     <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
-      <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden">
-        <div class="p-6 border-b border-[#E8E4D9] flex items-center justify-between bg-gradient-to-r from-[#3E6B4E] to-[#2F5B41]">
+      <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="p-6 border-b border-[#E8E4D9] flex items-center justify-between bg-gradient-to-r from-[#3E6B4E] to-[#2F5B41] flex-shrink-0">
           <h3 class="font-serif text-xl text-white">Tambah Siswa Baru</h3>
           <button onclick="document.getElementById('modalSiswa').classList.add('hidden')" class="text-white/80 hover:text-white transition-colors">
             <iconify-icon icon="lucide:x" class="text-2xl"></iconify-icon>
           </button>
         </div>
-        <form action="" method="POST" class="p-6 space-y-5" enctype="multipart/form-data">
+        <form action="" method="POST" class="p-6 space-y-5 flex-1 overflow-y-auto" enctype="multipart/form-data">
           <div class="grid md:grid-cols-2 gap-5">
             <div class="md:col-span-2">
               <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Foto Siswa</label>
@@ -359,6 +527,21 @@ include 'components/sidebar.php';
               <select name="jenis_kelamin" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
                 <option value="Laki-laki">Laki-laki</option>
                 <option value="Perempuan">Perempuan</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Jenjang</label>
+              <select name="jenjang" id="jenjangTambah" required onchange="updateKelasOptions('Tambah')" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <option value="">Pilih Jenjang</option>
+                <option value="SDLB">SDLB</option>
+                <option value="SMPLB">SMPLB</option>
+                <option value="SMALB">SMALB</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Kelas</label>
+              <select name="kelas" id="kelasTambah" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <option value="">Pilih Kelas</option>
               </select>
             </div>
             <div>
@@ -393,7 +576,9 @@ include 'components/sidebar.php';
                 <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Pekerjaan Orang Tua</label>
                 <select name="pekerjaan_ortu" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
                   <option value="ASN/TNI/Polri">ASN/TNI/Polri</option>
-                  <option value="Petani/Nelayan">Petani/Nelayan</option>
+                  <option value="Petani">Petani</option>
+                  <option value="Karyawan Swasta">Karyawan Swasta</option>
+                  <option value="Pedagang Kecil">Pedagang Kecil</option>
                   <option value="Buruh">Buruh</option>
                   <option value="Wiraswasta">Wiraswasta</option>
                   <option value="Lainnya">Lainnya</option>
@@ -415,14 +600,14 @@ include 'components/sidebar.php';
   <div id="modalEditSiswa" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('modalEditSiswa').classList.add('hidden')"></div>
     <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
-      <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden">
-        <div class="p-6 border-b border-[#E8E4D9] flex items-center justify-between bg-gradient-to-r from-[#3E6B4E] to-[#2F5B41]">
+      <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="p-6 border-b border-[#E8E4D9] flex items-center justify-between bg-gradient-to-r from-[#3E6B4E] to-[#2F5B41] flex-shrink-0">
           <h3 class="font-serif text-xl text-white">Edit Data Siswa</h3>
           <button onclick="document.getElementById('modalEditSiswa').classList.add('hidden')" class="text-white/80 hover:text-white transition-colors">
             <iconify-icon icon="lucide:x" class="text-2xl"></iconify-icon>
           </button>
         </div>
-        <form action="" method="POST" class="p-6 space-y-5" enctype="multipart/form-data">
+        <form action="" method="POST" class="p-6 space-y-5 flex-1 overflow-y-auto" enctype="multipart/form-data">
           <input type="hidden" name="id" id="editSiswaId">
           <div class="grid md:grid-cols-2 gap-5">
             <div class="md:col-span-2">
@@ -443,6 +628,21 @@ include 'components/sidebar.php';
               <select name="edit_jenis_kelamin" id="editJenisKelamin" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
                 <option value="Laki-laki">Laki-laki</option>
                 <option value="Perempuan">Perempuan</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Jenjang</label>
+              <select name="edit_jenjang" id="jenjangEdit" required onchange="updateKelasOptions('Edit')" class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <option value="">Pilih Jenjang</option>
+                <option value="SDLB">SDLB</option>
+                <option value="SMPLB">SMPLB</option>
+                <option value="SMALB">SMALB</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Kelas</label>
+              <select name="edit_kelas" id="kelasEdit" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
+                <option value="">Pilih Kelas</option>
               </select>
             </div>
             <div>
@@ -477,7 +677,9 @@ include 'components/sidebar.php';
                 <label class="block text-xs font-bold text-[#9FB5A5] uppercase mb-2">Pekerjaan Orang Tua</label>
                 <select name="edit_pekerjaan_ortu" id="editPekerjaanOrtu" required class="w-full px-4 py-3 bg-[#F9F8F4] border border-[#E8E4D9] rounded-lg focus:outline-none focus:border-[#3E6B4E] focus:ring-2 focus:ring-[#3E6B4E]/20 transition-all text-sm" <?php echo !$supabaseConnected ? 'disabled' : ''; ?>>
                   <option value="ASN/TNI/Polri">ASN/TNI/Polri</option>
-                  <option value="Petani/Nelayan">Petani/Nelayan</option>
+                  <option value="Petani">Petani</option>
+                  <option value="Karyawan Swasta">Karyawan Swasta</option>
+                  <option value="Pedagang Kecil">Pedagang Kecil</option>
                   <option value="Buruh">Buruh</option>
                   <option value="Wiraswasta">Wiraswasta</option>
                   <option value="Lainnya">Lainnya</option>
@@ -522,12 +724,46 @@ include 'components/sidebar.php';
       }
     }
 
-    function openEditSiswaModal(id, no_induk, nama, jenis_kelamin, usia, nama_ortu, alamat_ortu, pekerjaan_ortu, telpon_ortu, foto, status) {
+    // Update kelas options based on jenjang
+    function updateKelasOptions(mode) {
+      const jenjangSelect = document.getElementById('jenjang' + mode);
+      const kelasSelect = document.getElementById('kelas' + mode);
+      const jenjang = jenjangSelect.value;
+      
+      let kelasOptions = [];
+      if (jenjang === 'SDLB') {
+        kelasOptions = ['1', '2', '3', '4', '5', '6'];
+      } else if (jenjang === 'SMPLB') {
+        kelasOptions = ['7', '8', '9'];
+      } else if (jenjang === 'SMALB') {
+        kelasOptions = ['10', '11', '12'];
+      }
+      
+      // Clear existing options
+      kelasSelect.innerHTML = '<option value="">Pilih Kelas</option>';
+      
+      // Add new options
+      kelasOptions.forEach(kelas => {
+        const option = document.createElement('option');
+        option.value = kelas;
+        option.textContent = 'Kelas ' + kelas;
+        kelasSelect.appendChild(option);
+      });
+    }
+
+    function openEditSiswaModal(id, no_induk, nama, jenis_kelamin, usia, nama_ortu, alamat_ortu, pekerjaan_ortu, telpon_ortu, foto, status, jenjang = '', kelas = '') {
       document.getElementById('editSiswaId').value = id;
       document.getElementById('editNoInduk').value = no_induk;
       document.getElementById('editNama').value = nama;
       document.getElementById('editJenisKelamin').value = jenis_kelamin;
       document.getElementById('editUsia').value = usia;
+      document.getElementById('jenjangEdit').value = jenjang;
+      
+      // Update kelas options first
+      updateKelasOptions('Edit');
+      // Then set kelas value
+      document.getElementById('kelasEdit').value = kelas;
+      
       document.getElementById('editNamaOrtu').value = nama_ortu;
       document.getElementById('editAlamatOrtu').value = alamat_ortu;
       document.getElementById('editPekerjaanOrtu').value = pekerjaan_ortu;
@@ -541,45 +777,167 @@ include 'components/sidebar.php';
       document.getElementById('modalEditSiswa').classList.remove('hidden');
     }
 
-    // View Toggle Functionality
-    const gridViewBtn = document.getElementById('gridViewBtn');
-    const tableViewBtn = document.getElementById('tableViewBtn');
-    const gridView = document.getElementById('gridView');
-    const tableView = document.getElementById('tableView');
-
-    function setView(view) {
-      if (view === 'grid') {
-        gridView.classList.remove('hidden');
-        tableView.classList.add('hidden');
-        gridViewBtn.classList.add('bg-[#3E6B4E]', 'text-white');
-        gridViewBtn.classList.remove('text-[#5F6F65]', 'hover:bg-[#F9F8F4]');
-        tableViewBtn.classList.remove('bg-[#3E6B4E]', 'text-white');
-        tableViewBtn.classList.add('text-[#5F6F65]', 'hover:bg-[#F9F8F4]');
-      } else {
-        gridView.classList.add('hidden');
-        tableView.classList.remove('hidden');
-        tableViewBtn.classList.add('bg-[#3E6B4E]', 'text-white');
-        tableViewBtn.classList.remove('text-[#5F6F65]', 'hover:bg-[#F9F8F4]');
-        gridViewBtn.classList.remove('bg-[#3E6B4E]', 'text-white');
-        gridViewBtn.classList.add('text-[#5F6F65]', 'hover:bg-[#F9F8F4]');
+    // Update filter kelas options
+    function updateFilterKelas() {
+      const jenjangSelect = document.getElementById('filterJenjang');
+      const kelasSelect = document.getElementById('filterKelas');
+      const jenjang = jenjangSelect.value;
+      
+      let kelasOptions = [];
+      if (jenjang === 'SDLB') {
+        kelasOptions = ['1', '2', '3', '4', '5', '6'];
+      } else if (jenjang === 'SMPLB') {
+        kelasOptions = ['7', '8', '9'];
+      } else if (jenjang === 'SMALB') {
+        kelasOptions = ['10', '11', '12'];
       }
-      localStorage.setItem('siswaView', view);
+      
+      // Clear existing options
+      kelasSelect.innerHTML = '<option value="">Semua Kelas</option>';
+      
+      // Add new options
+      kelasOptions.forEach(kelas => {
+        const option = document.createElement('option');
+        option.value = kelas;
+        option.textContent = kelas;
+        <?php if (!empty($filter_kelas)): ?>
+          if (kelas === '<?php echo addslashes($filter_kelas); ?>') {
+            option.selected = true;
+          }
+        <?php endif; ?>
+        kelasSelect.appendChild(option);
+      });
     }
 
-    if (gridViewBtn && tableViewBtn) {
-      gridViewBtn.addEventListener('click', function() {
-        setView('grid');
+    // Live filtering function
+    function applyLiveFilter() {
+      const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
+      const searchKeywords = searchInput ? searchInput.split(/\s+/).filter(Boolean) : [];
+      const jkSelect = document.querySelector('select[name="jenis_kelamin"]').value;
+      const usiaMinInput = document.querySelector('input[name="usia_min"]').value;
+      const usiaMaxInput = document.querySelector('input[name="usia_max"]').value;
+      const jenjangSelect = document.getElementById('filterJenjang').value;
+      const kelasSelect = document.getElementById('filterKelas').value;
+      const siswaItems = document.querySelectorAll('.siswa-item');
+      let matchCount = 0;
+
+      siswaItems.forEach((item, index) => {
+        const noInduk = item.dataset.noInduk || '';
+        const nama = item.dataset.nama || '';
+        const jenisKelamin = item.dataset.jenisKelamin || '';
+        const jkShort = (jenisKelamin === 'Laki-laki') ? 'L' : ((jenisKelamin === 'Perempuan') ? 'P' : '');
+        const usia = item.dataset.usia || '';
+        const jenjang = item.dataset.jenjang || '';
+        const kelas = item.dataset.kelas || '';
+        const namaOrtu = item.dataset.namaOrtu || '';
+        const alamatOrtu = item.dataset.alamatOrtu || '';
+        const telponOrtu = item.dataset.telponOrtu || '';
+        const pekerjaanOrtu = item.dataset.pekerjaanOrtu || '';
+        const status = item.dataset.status || '';
+        const rowNo = (index + 1).toString();
+
+        const rowText = (
+          rowNo + " " +
+          noInduk + " " +
+          nama + " " +
+          jenisKelamin + " " + jkShort + " " +
+          usia + " " + usia + " tahun " +
+          jenjang + " " +
+          kelas + " kelas " + kelas + " " +
+          namaOrtu + " " +
+          alamatOrtu + " " +
+          telponOrtu + " " +
+          pekerjaanOrtu + " " +
+          status + " " +
+          item.innerText
+        ).toLowerCase();
+
+        let matches = true;
+
+        // Search filter: match exact typed text or all keywords across all fields
+        if (searchInput) {
+          if (!rowText.includes(searchInput)) {
+            // If direct string match fails, check if all individual keywords match
+            for (const keyword of searchKeywords) {
+              if (!rowText.includes(keyword)) {
+                matches = false;
+                break;
+              }
+            }
+          }
+        }
+
+        // Jenis Kelamin filter
+        if (jkSelect && jenisKelamin !== jkSelect) {
+          matches = false;
+        }
+
+        // Usia range filter
+        const usiaNum = parseInt(usia, 10);
+        if (usiaMinInput && (!isNaN(usiaNum) && usiaNum < parseInt(usiaMinInput, 10))) {
+          matches = false;
+        }
+        if (usiaMaxInput && (!isNaN(usiaNum) && usiaNum > parseInt(usiaMaxInput, 10))) {
+          matches = false;
+        }
+
+        // Jenjang filter
+        if (jenjangSelect && jenjang.toLowerCase() !== jenjangSelect.toLowerCase()) {
+          matches = false;
+        }
+
+        // Kelas filter
+        if (kelasSelect && kelas.toLowerCase() !== kelasSelect.toLowerCase()) {
+          matches = false;
+        }
+
+        if (matches) {
+          item.style.display = '';
+          matchCount++;
+        } else {
+          item.style.display = 'none';
+        }
       });
 
-      tableViewBtn.addEventListener('click', function() {
-        setView('table');
-      });
+      // Update filter results info
+      const filterInfo = document.getElementById('filterResultsInfo');
+      if (searchInput || jkSelect || usiaMinInput || usiaMaxInput || jenjangSelect || kelasSelect) {
+        if (!filterInfo) {
+          const newInfo = document.createElement('div');
+          newInfo.id = 'filterResultsInfo';
+          newInfo.className = 'p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg flex items-center gap-2 mt-4';
+          newInfo.innerHTML = '<iconify-icon icon="lucide:info"></iconify-icon> Menemukan <span id="matchCount">0</span> siswa dengan filter yang diterapkan';
+          const headerSection = document.querySelector('.mb-8');
+          headerSection.appendChild(newInfo);
+        }
+        document.getElementById('matchCount').textContent = matchCount;
+      } else if (filterInfo) {
+        filterInfo.remove();
+      }
     }
 
-    // Initialize view
+    // Initialize filter kelas
     document.addEventListener('DOMContentLoaded', function() {
-      const savedView = localStorage.getItem('siswaView') || 'table';
-      setView(savedView);
+      // Initialize filter kelas options
+      <?php if (!empty($filter_jenjang)): ?>
+        updateFilterKelas();
+      <?php endif; ?>
+
+      // Add live filter event listeners
+      document.getElementById('searchInput').addEventListener('input', applyLiveFilter);
+      document.querySelector('select[name="jenis_kelamin"]').addEventListener('change', applyLiveFilter);
+      document.querySelector('input[name="usia_min"]').addEventListener('input', applyLiveFilter);
+      document.querySelector('input[name="usia_max"]').addEventListener('input', applyLiveFilter);
+      document.getElementById('filterJenjang').addEventListener('change', function() {
+        updateFilterKelas();
+        applyLiveFilter();
+      });
+      document.getElementById('filterKelas').addEventListener('change', applyLiveFilter);
+
+      // Apply initial filters if any
+      <?php if (!empty($search_query) || !empty($filter_jenis_kelamin) || $filter_usia_min !== '' || $filter_usia_max !== '' || !empty($filter_jenjang) || !empty($filter_kelas)): ?>
+        applyLiveFilter();
+      <?php endif; ?>
     });
   </script>
 </body>

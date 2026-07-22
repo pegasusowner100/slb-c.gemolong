@@ -1,56 +1,111 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "FAQ — " . SITE_NAME;
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/faq');
+$title = "FAQ — SLB BC KARYA SEJAHTERA " . SITE_NAME;
 
-// Handle pertanyaan baru
-$error_msg = '';
-$success_msg = '';
+// Handle AJAX actions for Email Verification
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    if ($_POST['action'] === 'request_otp') {
+        $nama = trim($_POST['nama'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $pertanyaan = trim($_POST['pertanyaan'] ?? '');
 
-// Check if redirected from form submit
-if (isset($_GET['success'])) {
-    $success_msg = 'Terima kasih! Pertanyaan Anda telah kami terima dan akan dijawab segera.';
-}
+        if (empty($nama) || empty($email) || empty($pertanyaan)) {
+            echo json_encode(['success' => false, 'message' => 'Semua field harus diisi!']);
+            exit;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'message' => 'Email tidak valid!']);
+            exit;
+        }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_question') {
-    $nama = trim($_POST['nama'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $pertanyaan = trim($_POST['pertanyaan'] ?? '');
+        // Generate 6-digit OTP
+        $otp = rand(100000, 999999);
+        $_SESSION['faq_otp'] = $otp;
+        $_SESSION['faq_otp_time'] = time();
+        $_SESSION['faq_pending_question'] = [
+            'nama' => $nama,
+            'email' => $email,
+            'pertanyaan' => $pertanyaan
+        ];
 
-    if (empty($nama) || empty($email) || empty($pertanyaan)) {
-        $error_msg = 'Semua field harus diisi!';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error_msg = 'Email tidak valid!';
-    } else {
+        // Write OTP to log file for easy local testing
+        $otp_file = __DIR__ . '/../uploads/otp_log.txt';
+        $log_dir = dirname($otp_file);
+        if (!is_dir($log_dir)) {
+            @mkdir($log_dir, 0777, true);
+        }
+        @file_put_contents($otp_file, "[" . date('Y-m-d H:i:s') . "] Email: $email | OTP: $otp\n");
+
+        // Attempt to send email
+        $to = $email;
+        $subject = "Kode Verifikasi FAQ - " . SITE_NAME;
+        $message = "Halo $nama,\n\nKode verifikasi Anda untuk mengirim FAQ adalah: $otp\n\nKode ini berlaku selama 5 menit.";
+        $headers = "From: no-reply@" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "\r\n" .
+                   "Reply-To: no-reply@" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "\r\n" .
+                   "X-Mailer: PHP/" . phpversion();
+        
+        @mail($to, $subject, $message, $headers);
+
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Kode verifikasi telah dikirim ke email Anda.',
+            'otp_preview' => $otp
+        ]);
+        exit;
+    }
+
+    if ($_POST['action'] === 'verify_otp') {
+        $user_otp = trim($_POST['otp'] ?? '');
+        
+        if (empty($_SESSION['faq_otp']) || empty($_SESSION['faq_pending_question'])) {
+            echo json_encode(['success' => false, 'message' => 'Sesi verifikasi habis. Silakan kirim ulang kode.']);
+            exit;
+        }
+
+        // Check expiration (5 minutes)
+        if (time() - $_SESSION['faq_otp_time'] > 300) {
+            unset($_SESSION['faq_otp'], $_SESSION['faq_otp_time'], $_SESSION['faq_pending_question']);
+            echo json_encode(['success' => false, 'message' => 'Kode verifikasi telah kadaluwarsa (lebih dari 5 menit).']);
+            exit;
+        }
+
+        if ($user_otp != $_SESSION['faq_otp']) {
+            echo json_encode(['success' => false, 'message' => 'Kode verifikasi salah!']);
+            exit;
+        }
+
+        // Insert into Supabase
         if ($supabaseConnected) {
+            $pending = $_SESSION['faq_pending_question'];
             $data = [
-                'pertanyaan' => $pertanyaan,
+                'pertanyaan' => $pending['pertanyaan'],
                 'jawaban' => '',
                 'status' => 'published',
                 'urutan' => 999,
-                'nama_penanya' => $nama,
-                'email_penanya' => $email
+                'nama_penanya' => $pending['nama'],
+                'email_penanya' => $pending['email']
             ];
-
-            // Debug log
-            error_log('DEBUG FAQ: Inserting data - ' . json_encode($data));
 
             $result = supabaseInsert('faq', $data);
 
-            // Debug log result
-            error_log('DEBUG FAQ: Insert result - ' . json_encode($result));
-
             if ($result['success']) {
-                $success_msg = 'Terima kasih! Pertanyaan Anda telah kami terima dan akan dijawab segera.';
-                // Clear form by reloading page
-                header('Location: faq.php?success=1');
-                exit;
+                unset($_SESSION['faq_otp'], $_SESSION['faq_otp_time'], $_SESSION['faq_pending_question']);
+                echo json_encode(['success' => true, 'message' => 'Pertanyaan Anda berhasil diverifikasi dan dikirim!']);
             } else {
-                $error_msg = 'Gagal mengirim pertanyaan: ' . (isset($result['error']) ? $result['error'] : 'Unknown error');
+                echo json_encode(['success' => false, 'message' => 'Gagal menyimpan ke database: ' . ($result['error'] ?? 'Unknown error')]);
             }
         } else {
-            $error_msg = 'Koneksi database tidak tersedia.';
+            echo json_encode(['success' => false, 'message' => 'Koneksi database tidak tersedia.']);
         }
+        exit;
     }
 }
 
@@ -81,6 +136,12 @@ include '../components/head.php';
   <section id="faq" class="py-24">
     <div class="max-w-3xl mx-auto px-6">
       <div class="glass-section">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">FAQ</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Pertanyaan Umum</h2>
+          </div>
+        </div>
         <?php if (empty($faqs)): ?>
           <div class="text-center py-12">
             <iconify-icon icon="lucide:help-circle" class="text-6xl text-brand-muted/30 mb-4"></iconify-icon>
@@ -160,33 +221,22 @@ include '../components/head.php';
 
       <!-- Modal Body -->
       <div class="p-6 md:p-8 space-y-6">
-        <?php if ($success_msg): ?>
-          <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4 flex items-start gap-3">
-            <iconify-icon icon="lucide:check-circle" class="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5"></iconify-icon>
-            <div>
-              <p class="text-green-700 font-semibold text-sm"><?php echo htmlspecialchars($success_msg); ?></p>
-            </div>
+        <!-- Alert Box -->
+        <div id="modalAlert" class="hidden rounded-lg p-4 flex items-start gap-3 border-2">
+          <iconify-icon id="modalAlertIcon" icon="lucide:alert-circle" class="w-6 h-6 flex-shrink-0 mt-0.5"></iconify-icon>
+          <div>
+            <p id="modalAlertText" class="font-semibold text-sm"></p>
           </div>
-        <?php endif; ?>
+        </div>
 
-        <?php if ($error_msg): ?>
-          <div class="bg-red-50 border-2 border-red-500 rounded-lg p-4 flex items-start gap-3">
-            <iconify-icon icon="lucide:alert-circle" class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5"></iconify-icon>
-            <div>
-              <p class="text-red-700 font-semibold text-sm"><?php echo htmlspecialchars($error_msg); ?></p>
-            </div>
-          </div>
-        <?php endif; ?>
-
-        <form method="POST" action="" class="space-y-5">
-          <input type="hidden" name="action" value="submit_question">
-
+        <!-- Step 1: Input Form -->
+        <form id="formRequestOtp" class="space-y-5">
           <!-- Nama -->
           <div>
             <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide">Nama Lengkap</label>
             <input
               type="text"
-              name="nama"
+              id="input_nama"
               placeholder="Masukkan nama Anda..."
               class="w-full px-5 py-3 border-2 border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all text-sm"
               required>
@@ -197,7 +247,7 @@ include '../components/head.php';
             <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide">Email</label>
             <input
               type="email"
-              name="email"
+              id="input_email"
               placeholder="Masukkan email Anda..."
               class="w-full px-5 py-3 border-2 border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all text-sm"
               required>
@@ -207,12 +257,12 @@ include '../components/head.php';
           <div>
             <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide">Pertanyaan Anda</label>
             <textarea
-              name="pertanyaan"
+              id="input_pertanyaan"
               placeholder="Tulis pertanyaan Anda dengan detail..."
               rows="6"
               class="w-full px-5 py-3 border-2 border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all resize-none text-sm"
               required></textarea>
-            <p class="text-xs text-brand-muted mt-2">Minimalkan spasi, usahakan pertanyaan jelas dan spesifik agar mudah dijawab.</p>
+            <p class="text-xs text-brand-muted mt-2">Usahakan pertanyaan jelas dan spesifik agar mudah dijawab.</p>
           </div>
 
           <!-- Buttons -->
@@ -225,9 +275,52 @@ include '../components/head.php';
             </button>
             <button
               type="submit"
+              id="btnRequestOtp"
               class="flex-1 px-6 py-3 bg-gradient-to-r from-brand-accent to-brand-accent/80 hover:from-brand-secondary hover:to-brand-secondary/80 text-white font-bold text-sm uppercase tracking-widest rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
               <iconify-icon icon="lucide:send" class="text-base"></iconify-icon>
-              Kirim Pertanyaan
+              Kirim Kode Verifikasi
+            </button>
+          </div>
+        </form>
+
+        <!-- Step 2: OTP Verification Form (Hidden Initially) -->
+        <form id="formVerifyOtp" class="hidden space-y-5">
+          <div class="text-center py-2">
+            <iconify-icon icon="lucide:mail-check" class="text-5xl text-brand-accent mb-3"></iconify-icon>
+            <p class="text-sm text-brand-muted">Masukkan 6 digit kode verifikasi yang telah dikirim ke email Anda.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-brand-dark mb-3 uppercase tracking-wide text-center">Kode Verifikasi</label>
+            <input
+              type="text"
+              id="input_otp"
+              placeholder="123456"
+              maxlength="6"
+              pattern="[0-9]{6}"
+              class="w-full max-w-[200px] mx-auto block px-5 py-3 border-2 border-brand-border rounded-lg text-center font-mono text-2xl tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all"
+              required>
+          </div>
+
+          <!-- Local testing OTP preview -->
+          <div id="otpDeveloperPreview" class="hidden text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+            <strong>Mode Developer:</strong> Kode verifikasi Anda adalah <span id="developerOtpCode" class="font-bold underline"></span>.
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-3 pt-4 border-t border-brand-border">
+            <button
+              type="button"
+              onclick="showStep(1)"
+              class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-brand-dark font-bold text-sm uppercase tracking-widest rounded-lg transition-colors">
+              Kembali
+            </button>
+            <button
+              type="submit"
+              id="btnVerifyOtp"
+              class="flex-1 px-6 py-3 bg-gradient-to-r from-brand-accent to-brand-accent/80 hover:from-brand-secondary hover:to-brand-secondary/80 text-white font-bold text-sm uppercase tracking-widest rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+              <iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon>
+              Verifikasi & Kirim
             </button>
           </div>
         </form>
@@ -240,11 +333,16 @@ include '../components/head.php';
     function openQuestionModal() {
       document.getElementById('questionModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+      showStep(1);
     }
 
     function closeQuestionModal() {
       document.getElementById('questionModal').classList.add('hidden');
       document.body.style.overflow = 'auto';
+      // Reset forms
+      document.getElementById('formRequestOtp').reset();
+      document.getElementById('formVerifyOtp').reset();
+      hideAlert();
     }
 
     // Close modal when clicking outside
@@ -259,6 +357,125 @@ include '../components/head.php';
       if (e.key === 'Escape') {
         closeQuestionModal();
       }
+    });
+
+    // Control Wizard Steps
+    function showStep(step) {
+      if (step === 1) {
+        document.getElementById('formRequestOtp').classList.remove('hidden');
+        document.getElementById('formVerifyOtp').classList.add('hidden');
+      } else if (step === 2) {
+        document.getElementById('formRequestOtp').classList.add('hidden');
+        document.getElementById('formVerifyOtp').classList.remove('hidden');
+      }
+    }
+
+    // Alert functions
+    function showAlert(type, message) {
+      const alertBox = document.getElementById('modalAlert');
+      const icon = document.getElementById('modalAlertIcon');
+      const text = document.getElementById('modalAlertText');
+
+      alertBox.className = 'rounded-lg p-4 flex items-start gap-3 border-2';
+      if (type === 'success') {
+        alertBox.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+        icon.className = 'w-6 h-6 flex-shrink-0 mt-0.5 text-green-600';
+        icon.setAttribute('icon', 'lucide:check-circle');
+      } else {
+        alertBox.classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+        icon.className = 'w-6 h-6 flex-shrink-0 mt-0.5 text-red-600';
+        icon.setAttribute('icon', 'lucide:alert-circle');
+      }
+      text.textContent = message;
+      alertBox.classList.remove('hidden');
+    }
+
+    function hideAlert() {
+      document.getElementById('modalAlert').classList.add('hidden');
+    }
+
+    // AJAX Form submissions
+    document.getElementById('formRequestOtp').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nama = document.getElementById('input_nama').value;
+      const email = document.getElementById('input_email').value;
+      const pertanyaan = document.getElementById('input_pertanyaan').value;
+      const btn = document.getElementById('btnRequestOtp');
+
+      btn.disabled = true;
+      btn.innerHTML = '<iconify-icon icon="lucide:loader-2" class="animate-spin text-base"></iconify-icon> Memproses...';
+      hideAlert();
+
+      const formData = new FormData();
+      formData.append('action', 'request_otp');
+      formData.append('nama', nama);
+      formData.append('email', email);
+      formData.append('pertanyaan', pertanyaan);
+
+      fetch('', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:send" class="text-base"></iconify-icon> Kirim Kode Verifikasi';
+        
+        if (data.success) {
+          showAlert('success', data.message);
+          showStep(2);
+          if (data.otp_preview) {
+            document.getElementById('developerOtpCode').textContent = data.otp_preview;
+            document.getElementById('otpDeveloperPreview').classList.remove('hidden');
+          }
+        } else {
+          showAlert('error', data.message);
+        }
+      })
+      .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:send" class="text-base"></iconify-icon> Kirim Kode Verifikasi';
+        showAlert('error', 'Terjadi kesalahan sistem, silakan coba lagi.');
+      });
+    });
+
+    document.getElementById('formVerifyOtp').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const otp = document.getElementById('input_otp').value;
+      const btn = document.getElementById('btnVerifyOtp');
+
+      btn.disabled = true;
+      btn.innerHTML = '<iconify-icon icon="lucide:loader-2" class="animate-spin text-base"></iconify-icon> Memverifikasi...';
+      hideAlert();
+
+      const formData = new FormData();
+      formData.append('action', 'verify_otp');
+      formData.append('otp', otp);
+
+      fetch('', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon> Verifikasi & Kirim';
+
+        if (data.success) {
+          showAlert('success', data.message);
+          setTimeout(() => {
+            closeQuestionModal();
+            window.location.reload();
+          }, 2000);
+        } else {
+          showAlert('error', data.message);
+        }
+      })
+      .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<iconify-icon icon="lucide:check-circle" class="text-base"></iconify-icon> Verifikasi & Kirim';
+        showAlert('error', 'Terjadi kesalahan sistem, silakan coba lagi.');
+      });
     });
   </script>
 

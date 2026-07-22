@@ -2,12 +2,16 @@
 # KEAMANAN - API Keys & Credentials (JANGAN UPLOAD)
 # ==========================================
 includes/config.php
+includes/config (*).php
 includes/cloudinary.php
 includes/session.php
 .env
 .env.local
 .env.*.local
 .env.backup
+admin/bypass-login.php
+scratch/
+tmp_*
 
 # Local-only private copies
 TIDAK DIUPLOAD/
@@ -33,6 +37,10 @@ laravel-app/bootstrap/cache/
 # Upload & Storage (Gunakan Cloudinary)
 # ==========================================
 uploads/
+!uploads/.gitkeep
+!uploads/public/.gitkeep
+!uploads/private/.gitkeep
+!uploads/private/.htaccess
 storage/
 temp/
 cache/

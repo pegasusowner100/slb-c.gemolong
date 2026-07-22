@@ -13,13 +13,13 @@ echo "<hr>";
 // Data FAQ dari index.php
 $faq_data = [
     [
-        'pertanyaan' => 'Apa saja persyaratan untuk mendaftar di SLB-C YPSLB Gemolong?',
+        'pertanyaan' => 'Apa saja persyaratan untuk mendaftar di SLB BC KARYA SEJAHTERA?',
         'jawaban' => 'Persyaratan pendaftaran antara lain: fotokopi KK, fotokopi akta kelahiran, surat keterangan sehat, dan pas foto. Untuk informasi lebih lengkap, silakan hubungi kami via WhatsApp.',
         'urutan' => 1
     ],
     [
-        'pertanyaan' => 'Apakah ada biaya pendidikan di SLB-C YPSLB Gemolong?',
-        'jawaban' => 'SLB-C YPSLB Gemolong adalah sekolah negeri yang mendapatkan bantuan dari pemerintah, sehingga biaya pendidikan sangat terjangkau dan bahkan ada yang gratis untuk siswa yang memenuhi syarat.',
+        'pertanyaan' => 'Apakah ada biaya pendidikan di SLB BC KARYA SEJAHTERA?',
+        'jawaban' => 'SLB BC KARYA SEJAHTERA adalah sekolah negeri yang mendapatkan bantuan dari pemerintah, sehingga biaya pendidikan sangat terjangkau dan bahkan ada yang gratis untuk siswa yang memenuhi syarat.',
         'urutan' => 2
     ],
     [

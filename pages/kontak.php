@@ -2,7 +2,9 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/db.php';
-$title = "Hubungi Kami — SLB-C YPSLB Gemolong";
+require_once '../includes/track-visitor.php';
+trackVisitor('/pages/kontak');
+$title = "Hubungi Kami — SLB BC KARYA SEJAHTERA";
 include '../components/head.php';
 ?>
 <body class="text-brand-dark font-sans glass-body">
@@ -21,6 +23,12 @@ include '../components/head.php';
   <section id="kontak" class="py-24">
     <div class="max-w-7xl mx-auto px-6">
       <div class="glass-section">
+        <div class="text-center mb-8 fade-in-up delay-100">
+          <div class="mx-auto mb-6 max-w-[600px] px-6 py-4 text-center" style="background-image:url('<?php echo ASSETS_URL; ?>/images/papan_halaman.png'); background-size:cover; background-position:center; background-repeat:no-repeat;">
+            <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-white mb-4 inline-block">Kontak</span>
+            <h2 class="font-serif text-3xl md:text-4xl text-white mb-6">Hubungi Kami</h2>
+          </div>
+        </div>
         <div class="grid lg:grid-cols-2 gap-16">
           <div class="fade-in-left delay-200">
             <h2 class="font-serif text-3xl md:text-4xl font-normal tracking-tight mb-6">Informasi <em>Kontak</em></h2>
@@ -81,14 +89,47 @@ include '../components/head.php';
             <h3 class="font-serif text-2xl font-normal tracking-tight">Map Lokasi</h3>
             <div class="bg-white border border-brand-border rounded-lg shadow-sm overflow-hidden">
               <div class="aspect-video w-full">
-                <iframe 
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=110.83%2C-7.41%2C110.85%2C-7.39&layer=mapnik&marker=-7.400964%2C110.838884"
-                  width="100%" 
-                  height="100%" 
-                  style="border:0;" 
-                  allowfullscreen="" 
-                  loading="lazy"
-                ></iframe>
+                <?php
+                  // Bangun URL peta dari database (maps_url preferensi), lalu koordinat, lalu alamat
+                  $mapSrc = '';
+                  $mapsUrl = trim($profilSekolah['maps_url'] ?? '');
+                  if (!empty($mapsUrl)) {
+                    if (strpos($mapsUrl, '/embed') !== false || strpos($mapsUrl, 'output=embed') !== false) {
+                      $mapSrc = $mapsUrl;
+                    } elseif (preg_match('/@(-?\d+\.\d+),(-?\d+\.\d+)/', $mapsUrl, $mcoords)) {
+                      $mapSrc = 'https://www.google.com/maps?q=' . urlencode($mcoords[1] . ',' . $mcoords[2]) . '&output=embed';
+                    } else {
+                      $address = !empty($profilSekolah['alamat']) ? $profilSekolah['alamat'] : SITE_NAME;
+                      $mapSrc = 'https://www.google.com/maps?q=' . rawurlencode($address) . '&output=embed';
+                    }
+                  } elseif (!empty($profilSekolah['latitude']) && !empty($profilSekolah['longitude'])) {
+                    $mapSrc = 'https://www.google.com/maps?q=' . urlencode($profilSekolah['latitude'] . ',' . $profilSekolah['longitude']) . '&output=embed';
+                  } else {
+                    // Fallback: small OSM bbox centered on default coords
+                    $mapSrc = 'https://www.openstreetmap.org/export/embed.html?bbox=110.83%2C-7.41%2C110.85%2C-7.39&layer=mapnik&marker=-7.400964%2C110.838884';
+                  }
+                ?>
+                <iframe src="<?php echo htmlspecialchars($mapSrc); ?>" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+              </div>
+              <div class="p-3 border-t border-brand-border/30 bg-white/80 flex items-center justify-end">
+                <?php
+                  // Buat link buka di Google Maps (non-embed) jika memungkinkan
+                  $openUrl = '';
+                  if (!empty($mapsUrl)) {
+                    if (strpos($mapsUrl, 'google.com') !== false) {
+                      $openUrl = $mapsUrl;
+                    } elseif (preg_match('/@(-?\d+\.\d+),(-?\d+\.\d+)/', $mapsUrl, $mcoords)) {
+                      $openUrl = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($mcoords[1] . ',' . $mcoords[2]);
+                    }
+                  }
+                  if (empty($openUrl) && !empty($profilSekolah['latitude']) && !empty($profilSekolah['longitude'])) {
+                    $openUrl = 'https://www.google.com/maps/search/?api=1&query=' . urlencode($profilSekolah['latitude'] . ',' . $profilSekolah['longitude']);
+                  }
+                  if (empty($openUrl)) {
+                    $openUrl = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($profilSekolah['alamat'] ?? SITE_NAME);
+                  }
+                ?>
+                <a href="<?php echo htmlspecialchars($openUrl); ?>" target="_blank" class="text-sm font-semibold text-brand-accent hover:underline">Buka di Google Maps</a>
               </div>
             </div>
           </div>
